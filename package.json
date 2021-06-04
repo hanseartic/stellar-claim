@@ -1,0 +1,28 @@
+{
+  "name": "stellar-collect",
+  "version": "0.0.1",
+  "description": "UI to collect claimable balances for a stellar account",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "webpack --config webpack.config.js --watch --mode development"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@stellar/freighter-api": "^1.0.1",
+    "express": "^4.17.1",
+    "stellar-sdk": "^8.2.1"
+  },
+  "devDependencies": {
+    "css-loader": "^5.2.6",
+    "html-webpack-plugin": "^5.3.1",
+    "path": "^0.12.7",
+    "style-loader": "^2.0.0",
+    "tabulator-tables": "^4.9.3",
+    "url": "^0.11.0",
+    "util": "^0.12.4",
+    "webpack": "^5.38.1",
+    "webpack-cli": "^4.7.2"
+  }
+}
