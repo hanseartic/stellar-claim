@@ -1,6 +1,7 @@
 import './main.css'
 import header from './header.js'
-import {accountComponent, claimableBalancesComponent} from "./account";
+import Account, {claimableBalancesComponent} from './account';
+import ClaimableBalance from './claimable_balances'
 
 
 let ready = (fn) => {
@@ -21,7 +22,7 @@ const createMainDiv = () => {
 
 header(document.body);
 const mainDiv = createMainDiv();
-mainDiv.appendChild(accountComponent());
-mainDiv.appendChild(claimableBalancesComponent());
+mainDiv.appendChild(Account);
+mainDiv.appendChild(ClaimableBalance(Account));
 document.body.appendChild(mainDiv);
 
