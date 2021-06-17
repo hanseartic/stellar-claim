@@ -1,10 +1,24 @@
-#head {
-    display: flex;
-    flex-direction: row;
-    min-height: 5em;
+:root {
+    --color-main: #bbcee7;
+    --color-secondary: #9abcea;
+    --color-highlight: #75a1e3;
 }
-#logo {}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Roboto Condensed,Arial,Helvetica,sans-serif;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+}
+
 #main {
+    margin-top: 10px;
     width: 100%;
     display: flex;
     flex-direction: column;

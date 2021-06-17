@@ -1,0 +1,36 @@
+
+#claimable_balances{
+    display: flex;
+    flex-direction: column;
+    margin-top: 8%;
+    height: 50%;
+}
+
+#list_of_balances {
+    min-width: 80ch;
+}
+
+.asset_definition {
+    display: flex;
+    flex-direction: row;
+}
+.asset_definition > div {
+
+    display: flex;
+    flex-direction: column;
+}
+.asset_definition > img {
+    margin-right: 8px;
+}
+
+
+.tabulator-row.tabulator-selected {
+    background-color: #bbcee7 !important;
+}
+.tabulator-row.tabulator-selected:nth-child(2n) {
+    background-color: #9abcea !important;
+}
+.tabulator-row.tabulator-selected:hover {
+     background-color: #75a1e3 !important;
+ }
+

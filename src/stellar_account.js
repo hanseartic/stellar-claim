@@ -1,16 +1,12 @@
 'use strict';
 import FreighterAPI from "@stellar/freighter-api";
 import { Keypair } from "stellar-sdk";
-import './stellar_account.css';
-
-let selected_network = 'TESTNET';
 
 const loadFromFreighterButton = (inputField) => {
     if (!FreighterAPI.isConnected()) {
         console.debug('freighter is not connected');
         return;
     }
-    FreighterAPI.getNetwork().then(network => selected_network = network);
     const button = document.createElement('button');
 
     const buttonClickedHandler = (event) => {
@@ -48,3 +44,7 @@ export default (() => {
 
     return div;
 })();
+
+export function claimBalancesAction(){
+
+}

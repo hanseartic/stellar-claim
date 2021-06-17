@@ -4,13 +4,13 @@
 
     border: 1px solid grey;
 
+    font-size: larger;
     padding: 1px;
     width: 60ch;
-    scale: 1.2;
 }
 #stellar_account:focus-within {
-    outline: 1px goldenrod solid;
-    box-shadow: 0px 0px 4px 1px darkgoldenrod;
+    outline: 1px var(--color-secondary) solid;
+    box-shadow: 0px 0px 4px 1px var(--color-highlight);
 }
 
 #stellar_account>input {
@@ -57,28 +57,4 @@
 @-webkit-keyframes spin{
     from{-webkit-transform: rotateY(0deg);}
     to{-webkit-transform: rotateY(360deg);}
-}
-
-#claimable_balances{
-    display: flex;
-    flex-direction: column;
-    margin-top: 12%;
-    height: 50%;
-}
-
-#list_of_balances {
-    min-width: 80ch;
-}
-
-.asset_definition {
-    display: flex;
-    flex-direction: row;
-}
-.asset_definition > div {
-
-    display: flex;
-    flex-direction: column;
-}
-.asset_definition > img {
-    margin-right: 8px;
 }

@@ -15,9 +15,15 @@
     "stellar-sdk": "^8.2.1"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.3",
     "css-loader": "^5.2.6",
+    "file-loader": "^6.2.0",
+    "html-loader": "^2.1.2",
     "html-webpack-plugin": "^5.3.1",
+    "mini-css-extract-plugin": "^1.6.0",
+    "node-sass": "^6.0.0",
     "path": "^0.12.7",
+    "sass-loader": "^12.1.0",
     "style-loader": "^2.0.0",
     "tabulator-tables": "^4.9.3",
     "url": "^0.11.0",
