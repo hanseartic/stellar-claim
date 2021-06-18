@@ -1,0 +1,64 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: CI
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run build --if-present
+      - name: store build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-artifact
+          path: dist
+          retention-days: 1
+
+  deploy:
+    name: Deploy via rsync
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: retrieve build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artifact
+          path: dist
+
+      - name: deploy using rsync
+        uses: burnett01/rsync-deployments@4.1
+        with:
+          switches: -avzr --delete
+          path: dist/
+          remote_path: ${{ secrets.PATH }}/dist/
+          remote_host: ${{ secrets.HOST }}
+          remote_user: ${{ secrets.USERNAME }}
+          remote_key: ${{ secrets.KEY }}
+
+      - uses: fifsky/ssh-action@master
+        name: restart remote service
+        with:
+          user: ${{ secrets.USERNAME }}
+          host: ${{ secrets.HOST }}
+          key: ${{ secrets.KEY }}
+          command: |
+            cd ${{ secrets.PATH }}; git pull --rebase -f
+            ${{ secrets.RESTART_CMD }}
