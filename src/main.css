@@ -2,6 +2,7 @@
     --color-main: #bbcee7;
     --color-secondary: #9abcea;
     --color-highlight: #75a1e3;
+    --color-text: #0d0d0d;
 }
 
 body {
@@ -11,10 +12,14 @@ body {
     height: 100vh;
     width: 100vw;
     overflow: hidden;
+    color: var(--color-text);
 }
 
 a {
-    text-decoration: none;
+    text-decoration: underline dotted;
+}
+a:visited {
+    color: var(--color-text);
 }
 
 #main {
