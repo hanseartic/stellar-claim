@@ -126,9 +126,14 @@ function claimableBalancesComponent(claimableBalancesComponent, balancesTableId)
                 nextLink = nextLink.substring(nextLink.indexOf('?')+1);
             nextPage = new URLSearchParams(nextLink).get('cursor');
 
-            const records = response._embedded.records;
+            let records = response._embedded.records;
+            const lastPage = currentPage + (records.length<params.limit?0:1);
+            records.map(r => r.claimants = r.claimants.filter(claimant => !params.claimant || claimant.destination === params.claimant));
+            if (params.claimant) {
+                records = records.filter(isRecordClaimableByFirstClaimantsPredicates);
+            }
 
-            return {data: records, last_page:currentPage + (records.length<params.limit?0:1),};
+            return {data: records, last_page: lastPage,};
         },
     });
 
@@ -174,6 +179,10 @@ function claimableBalancesComponent(claimableBalancesComponent, balancesTableId)
         claimableBalancesComponent.updateClaimableBalances();
     });
     return div;
+}
+
+function isRecordClaimableByFirstClaimantsPredicates(record) {
+    return record.claimants[0].predicate.unconditional;
 }
 
 function claimBalancesAction(ev) {
