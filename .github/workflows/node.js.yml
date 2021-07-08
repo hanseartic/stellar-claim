@@ -22,11 +22,13 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
       - run: npm run build --if-present
+        env:
+          REACT_APP_DONATION_ADDRESS: ${{ secrets.DONATION_ADDRESS }}
       - name: store build artifacts
         uses: actions/upload-artifact@v2
         with:
           name: build-artifact
-          path: dist
+          path: build
           retention-days: 1
 
   deploy:
@@ -41,14 +43,14 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: build-artifact
-          path: dist
+          path: build
 
       - name: deploy using rsync
         uses: burnett01/rsync-deployments@4.1
         with:
           switches: -avzr --delete
-          path: dist/
-          remote_path: ${{ secrets.PATH }}/dist/
+          path: build/
+          remote_path: ${{ secrets.PATH }}/build/
           remote_host: ${{ secrets.HOST }}
           remote_user: ${{ secrets.USERNAME }}
           remote_key: ${{ secrets.KEY }}
