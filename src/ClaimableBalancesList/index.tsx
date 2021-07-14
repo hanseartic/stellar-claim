@@ -6,11 +6,22 @@ import StellarHelpers, {cachedFetch, getStellarAsset, shortAddress} from '../Ste
 import AssetPresenter from "./AssetPresenter";
 import {ServerApi} from "stellar-sdk";
 import {AccountState} from '../AccountSelector';
+import {useParams} from 'react-router-dom';
+
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
 const loadBalancesMax = 100;
 
-const tableColumns = (urlGenerator: (s:string)=>URL) => [
+const StellarAddress = (props: {id: string, length?: number}) => {
+    const {expertUrl} = StellarHelpers();
+    return (
+        <a title={props.id} href={expertUrl(`account/${props.id}`).href} target="_blank" rel="noreferrer">
+            {shortAddress(props.id, props.length??56)}
+        </a>
+    );
+};
+
+const tableColumns = () => [
     {
         title: 'Amount',
         dataIndex: 'amount',
@@ -21,16 +32,14 @@ const tableColumns = (urlGenerator: (s:string)=>URL) => [
         title: 'Asset',
         dataIndex: 'asset',
         key: 'asset',
-        render: (asset: string) => <AssetPresenter code={asset}/>,
+        render: (asset: string) => <AssetPresenter code={asset} />,
         width: 300,
     },
     {
         title: 'Sender',
         dataIndex: 'sponsor',
         key: 'sponsor',
-        render: (address: string) => (<a href={urlGenerator(`account/${address}`).href} target="_blank" rel="noreferrer">
-            {shortAddress(address, 9)}
-        </a>),
+        render: (address: string) => <StellarAddress id={address} length={9} />,
         width: 250,
     },
 ];
@@ -83,8 +92,9 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
 }
 const dontShowBalancesReasons = new Set([AccountState.notFound, AccountState.invalid, undefined]);
 export default function ClaimableBalancesOverview() {
-    const {expertUrl, horizonUrl} = StellarHelpers();
+    const {horizonUrl} = StellarHelpers();
 
+    const { account: accountParam } = useParams<{account?: string}>();
     const {accountInformation, balancesClaiming, balancesLoading, usePublicNetwork, setBalancesLoading, setSelectedBalances} = useApplicationState();
     const [balances, setBalances] = useState<ClaimableBalanceRecord[]>([]);
     const [selectedBalanceIds, setSelectedBalanceIds] = useState<React.Key[]>([]);
@@ -100,10 +110,12 @@ export default function ClaimableBalancesOverview() {
 
     const reload = () => {
         if (balancesLoading) return;
+        if (accountParam && accountInformation.state === undefined) return;
 
         setSelectedBalanceIds([]);
         setPagination(p => ({...p, total: 0,}));
         if (dontShowBalancesReasons.has(accountInformation.state)) {
+            setBalancesLoading(false);
             setBalances([]);
             return;
         }
@@ -182,7 +194,7 @@ export default function ClaimableBalancesOverview() {
     // )
 
     return (<Table
-        columns={tableColumns(expertUrl)}
+        columns={tableColumns()}
         dataSource={balances}
         loading={balancesLoading}
         pagination={pagination}

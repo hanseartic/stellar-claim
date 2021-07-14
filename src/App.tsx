@@ -1,32 +1,23 @@
-import react from 'react';
-import {
-    BrowserRouter as Router,
-    Link,
-    Redirect,
-    Route,
-    Switch,
-    useHistory,
-} from 'react-router-dom';
+import react, {useEffect} from 'react';
+import {BrowserRouter as Router, Link, Redirect, Route, Switch, useHistory,} from 'react-router-dom';
 import './App.css';
 import 'antd/dist/antd.css';
-import { About, ClaimBalances, Privacy } from './Pages';
-import { ApplicationContextProvider } from './ApplicationContext';
+import {About, ClaimBalances, Privacy} from './Pages';
+import {ApplicationContextProvider} from './ApplicationContext';
 import useApplicationState from './useApplicationState';
 import {
+    InfoCircleOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
     SafetyOutlined,
-    InfoCircleOutlined,
     SettingOutlined,
 } from '@ant-design/icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-    faBroadcastTower,
-    faCoins,
-    faHandHolding,
-} from '@fortawesome/free-solid-svg-icons';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faBroadcastTower, faCoins, faHandHolding,} from '@fortawesome/free-solid-svg-icons';
 
 import {Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
+import {AccountState} from "./AccountSelector";
+
 const { Item: MenuItem, SubMenu } = Menu;
 const { Content, Footer, Header, Sider } = Layout;
 
@@ -39,9 +30,13 @@ const App = () => {
         });
     const history = useHistory();
     function goHome() {
-        history.push("/claim");
+        history.push("/claim/");
     }
-
+    const { accountInformation } = useApplicationState();
+    useEffect(() => {
+        if (accountInformation.state === AccountState.notSet) history.replace('/claim/');
+        if ([AccountState.valid].includes(accountInformation.state!)) history.replace('/claim/'+accountInformation.account!.id);
+    }, [accountInformation, history]);
     return (
         <Layout className="App">
             <Sider
@@ -59,7 +54,7 @@ const App = () => {
                 <Menu forceSubMenuRender={true} theme="dark" mode="vertical" selectable={false}>
                     <SubMenu title="Balances" key="balances" icon={<FontAwesomeIcon icon={faCoins}/>} onTitleClick={goHome}>
                         <MenuItem title="Claim Balances" icon={<FontAwesomeIcon icon={faHandHolding}/>} key="balances:claim">
-                            <Link to="/claim">Claim</Link>
+                            <Link to="/claim/">Claim</Link>
                         </MenuItem>
                     </SubMenu>
                     <SubMenu key="settings" icon={<SettingOutlined />} title={"Settings"}>
@@ -83,9 +78,9 @@ const App = () => {
                 </Header>
                 <Content className="App-content">
                     <Switch>
-                        <Route path="/about" component={About} />
-                        <Route path="/privacy" component={Privacy} />
-                        <Route path="/claim/:account?" component={ClaimBalances} />
+                        <Route path="/about"><About /></Route>
+                        <Route path="/privacy"><Privacy /></Route>
+                        <Route path="/claim/:account?"><ClaimBalances /></Route>
                         <Redirect exact={true} from="/" to="/claim/" />
                     </Switch>
                 </Content>

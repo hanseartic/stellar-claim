@@ -1,6 +1,6 @@
 import React, {createContext, Dispatch, ReactNode, SetStateAction, useEffect, useState,} from 'react';
 import {ServerApi} from "stellar-sdk";
-import {AccountState, SelectedAccountInformation} from './AccountSelector';
+import {SelectedAccountInformation} from './AccountSelector';
 
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
@@ -21,7 +21,7 @@ interface ApplicationState {
 type SetApplicationState = Dispatch<SetStateAction<ApplicationState>>;
 
 const defaultState: ApplicationState = {
-    accountInformation: {account: undefined, state: AccountState.notSet},
+    accountInformation: {account: undefined, state: undefined},
     balancesClaiming: false,
     balancesLoading: false,
     donate: 0,

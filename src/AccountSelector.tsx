@@ -5,6 +5,7 @@ import FreighterButton from './FreighterButton';
 import useApplicationState from './useApplicationState';
 import StellarHelpers, { shortAddress } from "./StellarHelpers";
 import { MessageOutlined, UpOutlined } from "@ant-design/icons";
+import { useParams } from 'react-router-dom';
 
 const defaultAlertProps: AlertProps = {
     message: '',
@@ -26,7 +27,8 @@ const validAccountStates = new Set([
     undefined
 ]);
 export default function AccountSelector() {
-    const [ accountId, setAccountId ] = useState<string>('');
+    const { account: accountParam } = useParams<{account?: string}>();
+    const [ accountId, setAccountId ] = useState<string>(accountParam??'');
     const [ showAlert, setShowAlert ] = useState<boolean>(false);
     const [ alertProps, setAlertProps ] = useState<AlertProps>(defaultAlertProps);
     const { accountInformation, balancesLoading, setAccountInformation, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
@@ -65,7 +67,7 @@ export default function AccountSelector() {
                     resolve(information);
                 }
             })
-            .then(information => setAccountInformation(information));
+            .then(setAccountInformation);
         // eslint-disable-next-line
     }, [accountId, usePublicNetwork]);
     useEffect(() => {if (balancesLoading) setShowAlert(false);}, [balancesLoading]);
