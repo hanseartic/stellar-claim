@@ -12,10 +12,13 @@ export default function AssetPresenter({code}: AssetProps) {
     const [assetName, setAssetName] = useState<string>(asset.getCode());
     const {expertUrl, tomlAssetInformation} = StellarHelpers();
 
-    tomlAssetInformation(asset)
-        .then(({name}) => name && setAssetName(name+' ('+asset.getCode()+')'))
-        .catch(({reason}) => reason === 'native' && setAssetName('Stellar Lumens (XLM)'));
-
+    if (assetName.startsWith('0x')) {
+        setAssetName(String.fromCodePoint(Number(assetName)));
+    } else {
+        tomlAssetInformation(asset)
+            .then(({name}) => name && setAssetName(name + ' (' + asset.getCode() + ')'))
+            .catch(({reason}) => reason === 'native' && setAssetName('Stellar Lumens (XLM)'));
+    }
     const assetHref = expertUrl(`asset/${asset.getCode()}${asset.isNative()?'':'-'+asset.getIssuer()}`).href;
     return (
         <Row align="middle" gutter={16}>

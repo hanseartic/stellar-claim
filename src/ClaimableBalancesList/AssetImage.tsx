@@ -2,7 +2,7 @@ import {Asset} from "stellar-sdk";
 import React from "react";
 import stellarLogo from "../stellar_logo_black.png";
 import StellarHelpers, {shortAddress} from "../StellarHelpers";
-import {Avatar} from "antd";
+import {Avatar, Image} from "antd";
 
 export default function AssetImage ({asset}: { asset: Asset }) {
     const [source, setSource] = React.useState<string>();
@@ -16,11 +16,15 @@ export default function AssetImage ({asset}: { asset: Asset }) {
         ? 'stellar'
         : shortAddress(asset.getIssuer(), 15)
 
+    const assetCode = asset.getCode().startsWith('0x')
+        ? String.fromCodePoint(Number(asset.getCode()))
+        : asset.getCode();
+
     return (<Avatar
         alt={`Logo for asset ${asset.getCode()} issued by ${issuer}`}
         shape='circle'
         size={40}
-        src={source}
-        children={asset.getCode()}
+        src={source?<Image src={source} preview={{mask: undefined}} />:undefined}
+        children={assetCode}
     />);
 };
