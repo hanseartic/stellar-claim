@@ -48,6 +48,7 @@ const getTomlAssetInformation = async (url: (path: string) => URL, asset: Asset)
                         .find(c => c.issuer === asset.getIssuer() && c.code === asset.getCode())
                     ?? Promise.reject(`No TOML information found for ${asset} on ${home_domain}`)
                 )
+                .then(p => ({...p, domain: home_domain}))
             )
             .catch((reason: any) => {
                 console.warn(reason);
@@ -98,6 +99,7 @@ export interface TomlAssetInformation {
     issuer?: string;
     name?: string;
     desc?: string;
+    domain?: string;
 }
 export interface NoTomlInformation {
     reason: string,
