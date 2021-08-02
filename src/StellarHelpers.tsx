@@ -41,7 +41,7 @@ const getTomlAssetInformation = async (url: (path: string) => URL, asset: Asset)
         ...await cachedFetchJson(url('/accounts/' + asset.getIssuer()).href)
             .then((json: any) => (!json.home_domain)
                 ? Promise.reject(`No home domain set for ${asset}.`)
-                : json.home_domain
+                : json.home_domain.replace(/^(http)s?:\/\/|\/$/g, '')
             )
             .then(home_domain => cachedResolveToml(home_domain)
                 .then((toml: { CURRENCIES?: TomlAssetInformation[] }) => (toml.CURRENCIES ?? [])
