@@ -1,16 +1,14 @@
 import {Col, Row, Space} from 'antd';
 import StellarHelpers, {getStellarAsset, shortAddress, TomlAssetInformation} from '../StellarHelpers';
 import React, {useEffect, useState} from 'react';
-import stellarLogo from "../stellar_logo_black.png";
 import AssetImage from './AssetImage';
-
 interface AssetProps {
     code: string;
 }
 
 export default function AssetPresenter({code}: AssetProps) {
     const asset = getStellarAsset(code);
-    const [{code: assetCode, name: assetName, image, issuer, domain}, setAssetInformation] = useState<TomlAssetInformation>({
+    const [assetInformation, setAssetInformation] = useState<TomlAssetInformation>({
         code: asset.getCode(),
         issuer: asset.isNative()?'native':asset.getIssuer(),
     });
@@ -22,21 +20,18 @@ export default function AssetPresenter({code}: AssetProps) {
             .catch(({reason}) => reason === 'native' && setAssetInformation(p => ({
                 ...p,
                 name: 'Stellar Lumens',
-                issuer: 'Stellar Foundation',
                 domain: 'stellar.org',
-                image: stellarLogo,
             })));
         // eslint-disable-next-line
     }, []);
     useEffect(() => {
-        if (assetCode?.startsWith('0x')) {
+        if (assetInformation.code?.startsWith('0x')) {
             setAssetInformation(p => ({
                 ...p,
-                code: String.fromCodePoint(Number(assetCode)),
-                image: 'https://twemoji.maxcdn.com/v/latest/72x72/'+assetCode?.substring(2).replace(/^0+/g, '')+'.png'
+                code: String.fromCodePoint(Number(p.code)),
             }));
         }
-    }, [assetCode]);
+    }, [assetInformation.code]);
 
 
     const assetHref = expertUrl(`asset/${asset.getCode()}${asset.isNative()?'':'-'+asset.getIssuer()}`).href;
@@ -44,17 +39,24 @@ export default function AssetPresenter({code}: AssetProps) {
     return (
         <Row align="middle" gutter={16}>
             <Col flex="40px">
-                <AssetImage assetInformation={{code: assetCode, name: assetName, image}} />
+                <AssetImage asset={asset} assetInformation={assetInformation} />
             </Col>
             <Col flex="auto">
                 <Row>
-                    <a href={assetHref} target="_blank" rel="noreferrer">{(!!assetName?assetName + ' – ':'') + assetCode}</a><Space wrap/>
+                    <a href={assetHref}
+                       target="_blank"
+                       rel="noreferrer">
+                        {(!!assetInformation.name?assetInformation.name + ' – ':'') + assetInformation.code}
+                    </a><Space wrap/>
                 </Row>
                 <Row>
-                    <a href={domain?new URL('https://'+domain).href:issuerHref} target="_blank" rel="noreferrer">{domain??shortAddress(issuer!, 12)}</a>
+                    <a href={assetInformation.domain?new URL('https://'+assetInformation.domain).href:issuerHref}
+                       target="_blank"
+                       rel="noreferrer">
+                        {assetInformation.domain??shortAddress(assetInformation.issuer!, 12)}
+                    </a>
                 </Row>
             </Col>
         </Row>
     );
 };
-
