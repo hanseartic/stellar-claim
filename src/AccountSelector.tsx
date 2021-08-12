@@ -91,6 +91,8 @@ export default function AccountSelector() {
         // eslint-disable-next-line
     }, [accountInformation.state, accountId])
 
+    useEffect(() => {accountParam && setAccountId(accountParam)}, [accountParam]);
+
     const accountInput = <Input
         allowClear
         placeholder={Keypair.random().publicKey()}
