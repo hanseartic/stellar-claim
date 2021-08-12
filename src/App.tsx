@@ -93,7 +93,7 @@ const App = () => {
                         <Route path="/about"><About /></Route>
                         <Route path="/privacy"><Privacy /></Route>
                         <Route path="/claim/:account?"><ClaimBalances /></Route>
-                        <Redirect exact={true} from="/" to="/claim/" />
+                        <Redirect exact={true} from="/" to="/account/" />
                     </Switch>
                 </Content>
                 <Footer ></Footer>
