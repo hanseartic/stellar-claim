@@ -90,6 +90,7 @@ export default function AccountOverview() {
                 }
             ));
         }
+        // eslint-disable-next-line
     }, [accountInformation.account]);
 
     return (<>
