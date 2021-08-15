@@ -2,7 +2,7 @@ import react, {useEffect} from 'react';
 import {BrowserRouter as Router, Link, Redirect, Route, Switch, useHistory,} from 'react-router-dom';
 import './App.css';
 import 'antd/dist/antd.css';
-import {About, ClaimBalances, Privacy} from './Pages';
+import {About, AccountOverview, ClaimBalances, Privacy} from './Pages';
 import {ApplicationContextProvider} from './ApplicationContext';
 import useApplicationState from './useApplicationState';
 import {
@@ -13,7 +13,12 @@ import {
     SettingOutlined,
 } from '@ant-design/icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faBroadcastTower, faCoins, faHandHolding,} from '@fortawesome/free-solid-svg-icons';
+import {
+    faBroadcastTower,
+    faHandHolding,
+    faIdCard,
+    faWallet,
+} from '@fortawesome/free-solid-svg-icons';
 
 import {Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
 import {AccountState} from "./AccountSelector";
@@ -30,12 +35,15 @@ const App = () => {
         });
     const history = useHistory();
     function goHome() {
-        history.push("/claim/");
+        history.push("/account/");
     }
     const { accountInformation } = useApplicationState();
     useEffect(() => {
-        if (accountInformation.state === AccountState.notSet) history.replace('/claim/');
-        if ([AccountState.valid].includes(accountInformation.state!)) history.replace('/claim/'+accountInformation.account!.id);
+        if (history.location.pathname.startsWith('/claim/') || history.location.pathname.startsWith('/account/')) {
+            let page = history.location.pathname.split('/')[1];
+            if (accountInformation.state === AccountState.notSet) history.replace(`/${page}/`);
+            if ([AccountState.valid].includes(accountInformation.state!)) history.replace(`/${page}/${accountInformation.account!.id}`);
+        }
     }, [accountInformation, history]);
     return (
         <Layout className="App">
@@ -52,8 +60,11 @@ const App = () => {
                 }}>
                 {/*<div><img src={logo} className="App-logo" alt="logo"/></div>*/}
                 <Menu forceSubMenuRender={true} theme="dark" mode="vertical" selectable={false}>
-                    <SubMenu title="Balances" key="balances" icon={<FontAwesomeIcon icon={faCoins}/>} onTitleClick={goHome}>
-                        <MenuItem title="Claim Balances" icon={<FontAwesomeIcon icon={faHandHolding}/>} key="balances:claim">
+                    <SubMenu title="Stellar Account" key="account" icon={<FontAwesomeIcon icon={faWallet}/>} onTitleClick={goHome}>
+                        <MenuItem title="Account overview" icon={<FontAwesomeIcon icon={faIdCard}/>}  key="account:overview">
+                            <Link to="/account/">Account overview</Link>
+                        </MenuItem>
+                        <MenuItem title="Claim Balances" icon={<FontAwesomeIcon icon={faHandHolding}/>} key="account:claim">
                             <Link to="/claim/">Claim</Link>
                         </MenuItem>
                     </SubMenu>
@@ -78,10 +89,11 @@ const App = () => {
                 </Header>
                 <Content className="App-content">
                     <Switch>
+                        <Route path="/account/:account?"><AccountOverview /></Route>
                         <Route path="/about"><About /></Route>
                         <Route path="/privacy"><Privacy /></Route>
                         <Route path="/claim/:account?"><ClaimBalances /></Route>
-                        <Redirect exact={true} from="/" to="/claim/" />
+                        <Redirect exact={true} from="/" to="/account/" />
                     </Switch>
                 </Content>
                 <Footer ></Footer>
