@@ -151,7 +151,8 @@ export default function ClaimableBalancesOverview() {
         // eslint-disable-next-line
     }, [selectedBalanceIds]);
 
-    const maxSelect = 3;
+    // TODO: calculate available selections based on existing trust-lines
+    const maxSelect = 30;
     const selectRow = (row: ClaimableBalanceRecord, e: React.UIEvent) => {
         e.preventDefault();
         const selectedIds = [...selectedBalanceIds];
