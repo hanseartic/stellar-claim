@@ -1,3 +1,4 @@
+import AccountOverview from "./AccountOverview";
 import ClaimBalances from "./ClaimBalances";
 import ReactMarkdown, { ReactElement } from "react-markdown";
 import aboutMarkdown from './About.md';
@@ -84,6 +85,7 @@ const About = () =>  <MarkdownPage source={aboutMarkdown} />;
 
 export {
     About,
+    AccountOverview,
     ClaimBalances,
     Privacy
 };

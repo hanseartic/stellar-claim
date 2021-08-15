@@ -27,11 +27,11 @@ const validAccountStates = new Set([
     undefined
 ]);
 export default function AccountSelector() {
+    const { accountInformation, balancesLoading, setAccountInformation, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
     const { account: accountParam } = useParams<{account?: string}>();
-    const [ accountId, setAccountId ] = useState<string>(accountParam??'');
+    const [ accountId, setAccountId ] = useState<string>(accountParam??accountInformation?.account?.id??'');
     const [ showAlert, setShowAlert ] = useState<boolean>(false);
     const [ alertProps, setAlertProps ] = useState<AlertProps>(defaultAlertProps);
-    const { accountInformation, balancesLoading, setAccountInformation, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
     const {horizonUrl} = StellarHelpers();
     const inputChangedHandler = (input: string) => setAccountId(input);
 
@@ -90,6 +90,8 @@ export default function AccountSelector() {
         }
         // eslint-disable-next-line
     }, [accountInformation.state, accountId])
+
+    useEffect(() => {accountParam && setAccountId(accountParam)}, [accountParam]);
 
     const accountInput = <Input
         allowClear
