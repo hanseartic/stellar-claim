@@ -1,0 +1,6 @@
+.domain-issued-asset::after {
+    content: '*';
+    padding: 0 0.2em;
+    font-weight: bold;
+    color: #7a8a94;
+}

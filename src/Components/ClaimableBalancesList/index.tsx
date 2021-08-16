@@ -1,25 +1,17 @@
 import React, {useEffect, useState} from 'react';
 import {Table, TablePaginationConfig} from 'antd';
-import {TableRowSelection} from "antd/lib/table/interface";
-import useApplicationState from '../useApplicationState';
-import StellarHelpers, {cachedFetch, getStellarAsset, shortAddress} from '../StellarHelpers';
-import AssetPresenter from "./AssetPresenter";
-import {ServerApi} from "stellar-sdk";
-import {AccountState} from '../AccountSelector';
+import {TableRowSelection} from 'antd/lib/table/interface';
+import useApplicationState from '../../useApplicationState';
+import StellarHelpers, {cachedFetch, getStellarAsset} from '../../StellarHelpers';
+import AssetPresenter from '../AssetPresenter';
+import {ServerApi} from 'stellar-sdk';
+import {AccountState} from '../../AccountSelector';
 import {useParams} from 'react-router-dom';
+import StellarAddressLink from '../StellarAddressLink';
 
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
 const loadBalancesMax = 100;
-
-const StellarAddress = (props: {id: string, length?: number}) => {
-    const {expertUrl} = StellarHelpers();
-    return (
-        <a title={props.id} href={expertUrl(`account/${props.id}`).href} target="_blank" rel="noreferrer">
-            {shortAddress(props.id, props.length??56)}
-        </a>
-    );
-};
 
 const tableColumns = () => [
     {
@@ -39,7 +31,7 @@ const tableColumns = () => [
         title: 'Sender',
         dataIndex: 'sponsor',
         key: 'sponsor',
-        render: (address: string) => <StellarAddress id={address} length={9} />,
+        render: (address: string) => <StellarAddressLink id={address} length={9} />,
         width: 250,
     },
 ];

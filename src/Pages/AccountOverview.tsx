@@ -1,14 +1,14 @@
 import {Badge, Card, Table} from 'antd';
 import React, {useEffect, useState} from 'react';
 import AccountSelector from '../AccountSelector';
-import useApplicationState from "../useApplicationState";
-import AssetPresenter from "../ClaimableBalancesList/AssetPresenter";
+import useApplicationState from '../useApplicationState';
+import AssetPresenter from '../Components/AssetPresenter';
 import {BigNumber} from 'bignumber.js';
-import {Link} from 'react-router-dom';
-import StellarHelpers, {shortAddress} from "../StellarHelpers";
+import StellarHelpers, {shortAddress} from '../StellarHelpers';
 import URI from 'urijs';
-import {TransactionCallBuilder} from "stellar-sdk/lib/transaction_call_builder";
-import {Horizon, ServerApi} from "stellar-sdk";
+import {TransactionCallBuilder} from 'stellar-sdk/lib/transaction_call_builder';
+import {Horizon, ServerApi} from 'stellar-sdk';
+import StellarAddressLink from '../Components/StellarAddressLink';
 
 type AccountBalanceRecord = {
     asset: string,
@@ -95,7 +95,7 @@ export default function AccountOverview() {
 
     return (<>
         <AccountSelector />
-        <>Account {shortAddress(accountInformation.account?.id??'', 9)} created on {accountCreated.date} by <Link to={'/account/'+accountCreated.by}>{shortAddress(accountCreated.by??'', 9)}</Link></>
+        <>Account {shortAddress(accountInformation.account?.id??'', 9)} created on {accountCreated.date} by <StellarAddressLink id={accountCreated.by} length={9} /></>
         <Table
             showHeader={false}
             columns={balancesTableColumns()}

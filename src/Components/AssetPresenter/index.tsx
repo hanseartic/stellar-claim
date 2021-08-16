@@ -1,10 +1,27 @@
 import {Col, Row, Space} from 'antd';
-import StellarHelpers, {getStellarAsset, shortAddress, TomlAssetInformation} from '../StellarHelpers';
+import StellarHelpers, {getStellarAsset, TomlAssetInformation} from '../../StellarHelpers';
 import React, {useEffect, useState} from 'react';
-import AssetImage from './AssetImage';
+import AssetImage from '../AssetImage';
+import StellarAddressLink from '../StellarAddressLink';
+import './styles.css'
+
 interface AssetProps {
     code: string;
 }
+
+const AssetIssuer = (props: {code: string, issuer: string, domain?: string}) => {
+    return (<code>
+            {!!props.domain?<span className='domain-issued-asset'>{props.code}</span>:null}
+            {!!props.domain
+                ? <a href={new URL('https://'+props.domain).href}
+                     target="_blank"
+                     rel="noreferrer">
+                    {props.domain}
+                </a>
+                : <StellarAddressLink id={props.issuer} length={12} />
+            }
+        </code>);
+};
 
 export default function AssetPresenter({code}: AssetProps) {
     const asset = getStellarAsset(code);
@@ -35,7 +52,6 @@ export default function AssetPresenter({code}: AssetProps) {
 
 
     const assetHref = expertUrl(`asset/${asset.getCode()}${asset.isNative()?'':'-'+asset.getIssuer()}`).href;
-    const issuerHref = expertUrl(`account/${asset.getIssuer()}`).href;
     return (
         <Row align="middle" gutter={16}>
             <Col flex="40px">
@@ -46,15 +62,19 @@ export default function AssetPresenter({code}: AssetProps) {
                     <a href={assetHref}
                        target="_blank"
                        rel="noreferrer">
-                        {(!!assetInformation.name?assetInformation.name + ' – ':'') + assetInformation.code}
+                        {assetInformation.name??assetInformation.code}
                     </a><Space wrap/>
                 </Row>
                 <Row>
-                    <a href={assetInformation.domain?new URL('https://'+assetInformation.domain).href:issuerHref}
-                       target="_blank"
-                       rel="noreferrer">
-                        {assetInformation.domain??shortAddress(assetInformation.issuer!, 12)}
-                    </a>
+                    <AssetIssuer code={assetInformation.code!} domain={assetInformation.domain} issuer={asset.getIssuer()} />
+                    {/*assetInformation.domain
+                        ? <a href={new URL('https://'+assetInformation.domain).href}
+                           target="_blank"
+                           rel="noreferrer">
+                            {assetInformation.domain}
+                        </a>
+                        : <StellarAddressLink id={asset.getIssuer()} length={12} />
+                    */}
                 </Row>
             </Col>
         </Row>

@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from "react";
-import {TomlAssetInformation} from "../StellarHelpers";
-import {Avatar, Image} from "antd";
-import stellarLogo from "../stellar_logo_black.png";
-import { Asset } from "stellar-sdk";
+import React, {useEffect, useState} from 'react';
+import {TomlAssetInformation} from '../StellarHelpers';
+import {Avatar, Image} from 'antd';
+import stellarLogo from '../stellar_logo_black.png';
+import { Asset } from 'stellar-sdk';
 
 export default function AssetImage ({asset, assetInformation}: { asset: Asset, assetInformation: TomlAssetInformation }) {
     const [imageSource, setImageSource] = useState(assetInformation.image);
@@ -23,6 +23,10 @@ export default function AssetImage ({asset, assetInformation}: { asset: Asset, a
         shape='circle'
         size={40}
         src={imageSource?<Image src={imageSource} preview={{mask: undefined}} />:false}
-        children={assetInformation.code?.substr(0, 4)}
+        children={(
+            (assetInformation.code??'')
+                // get only uppercase characters - if any
+                .match(/\p{Lu}/gu)??[assetInformation.code?.toUpperCase()])
+            .join('').substr(0, 4)}
     />);
 };

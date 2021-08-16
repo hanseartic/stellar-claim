@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ClaimableBalancesOverview from "../ClaimableBalancesList";
+import ClaimableBalancesOverview from "../Components/ClaimableBalancesList";
 import AccountSelector, {AccountState} from "../AccountSelector";
 import {Button, Col, notification, Row} from "antd";
 import {WalletOutlined} from "@ant-design/icons";

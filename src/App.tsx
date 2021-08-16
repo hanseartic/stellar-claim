@@ -89,11 +89,17 @@ const App = () => {
                 </Header>
                 <Content className="App-content">
                     <Switch>
+                        <Route path={['/http:', '/https:']} component={(props: {location: Location}) => {
+
+                            window.location.replace(props.location.pathname.substr(1)) // substr(1) removes the preceding '/'
+                            return null
+                        }}/>
                         <Route path="/account/:account?"><AccountOverview /></Route>
                         <Route path="/about"><About /></Route>
                         <Route path="/privacy"><Privacy /></Route>
                         <Route path="/claim/:account?"><ClaimBalances /></Route>
                         <Redirect exact={true} from="/" to="/account/" />
+
                     </Switch>
                 </Content>
                 <Footer ></Footer>
