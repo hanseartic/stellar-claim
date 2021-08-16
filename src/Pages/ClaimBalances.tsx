@@ -2,7 +2,7 @@ import React from 'react';
 
 import ClaimableBalancesOverview from "../Components/ClaimableBalancesList";
 import AccountSelector, {AccountState} from "../AccountSelector";
-import {Button, Col, notification, Row} from "antd";
+import {Button, notification} from "antd";
 import {WalletOutlined} from "@ant-design/icons";
 import useApplicationState from "../useApplicationState";
 import {
@@ -129,34 +129,16 @@ export default function ClaimBalances() {
     };
 
     return (<>
-        <Row>
-            <Col span={4}/>
-            <Col span={16}>
-                <AccountSelector />
-            </Col>
-            <Col span={4}/>
-        </Row>
-        <Row>
-            <Col span={4}/>
-            <Col span={16}>
-                <ClaimableBalancesOverview />
-            </Col>
-            <Col span={4}/>
-        </Row>
-        <Row>
-            <Col span={4}/>
-            <Col span={16}>
-                <Button
-                    block
-                    loading={balancesClaiming}
-                    disabled={!selectedBalances || selectedBalances.length === 0}
-                    icon={<WalletOutlined />}
-                    onClick={() => claimBalances()}
-                >
-                    Claim selected balances
-                </Button>
-            </Col>
-            <Col span={4}/>
-        </Row>
+        <AccountSelector />
+        <ClaimableBalancesOverview />
+        <Button
+            block
+            loading={balancesClaiming}
+            disabled={!selectedBalances || selectedBalances.length === 0}
+            icon={<WalletOutlined />}
+            onClick={() => claimBalances()}
+        >
+            Claim selected balances
+        </Button>
     </>);
 }
