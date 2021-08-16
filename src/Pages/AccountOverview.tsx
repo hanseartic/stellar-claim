@@ -29,12 +29,12 @@ const balancesTableColumns = () => [
         render: (record: AccountBalanceRecord) => (<>
             <Badge.Ribbon
                 color='red'
-                style={{display: (record.sellingLiabilities.isZero()?"none":"")}}
-                text={record.sellingLiabilities.isZero()?'':'Selling: '+record.sellingLiabilities.toFormat()}>
+                style={{display: (record.sellingLiabilities.isZero()?"none":""), marginTop: 25}}
+                text={record.sellingLiabilities.isZero()?'':'Offer: '+record.sellingLiabilities.toFormat()}>
             <Badge.Ribbon
                 color='lime'
-                style={{marginTop: record.sellingLiabilities.isZero()?0:30, display: (record.buyingLiabilities.isZero()?"none":"")}}
-                text={record.buyingLiabilities.isZero()?'':'Buying: '+record.buyingLiabilities.toFormat()}>
+                style={{marginTop: record.sellingLiabilities.isZero()?25:55, display: (record.buyingLiabilities.isZero()?"none":"")}}
+                text={record.buyingLiabilities.isZero()?'':'Ask: '+record.buyingLiabilities.toFormat()}>
             <Card size='small' title={record.spendable.toFormat() + ' spendable'}>
                 <p>{record.balance.sub(record.spendable).toFormat()} reserved</p>
                 <b>{record.balance.toFormat()} total</b>

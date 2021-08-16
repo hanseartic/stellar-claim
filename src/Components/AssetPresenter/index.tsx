@@ -67,14 +67,6 @@ export default function AssetPresenter({code}: AssetProps) {
                 </Row>
                 <Row>
                     <AssetIssuer code={assetInformation.code!} domain={assetInformation.domain} issuer={asset.getIssuer()} />
-                    {/*assetInformation.domain
-                        ? <a href={new URL('https://'+assetInformation.domain).href}
-                           target="_blank"
-                           rel="noreferrer">
-                            {assetInformation.domain}
-                        </a>
-                        : <StellarAddressLink id={asset.getIssuer()} length={12} />
-                    */}
                 </Row>
             </Col>
         </Row>
