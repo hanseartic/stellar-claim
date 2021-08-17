@@ -1,4 +1,4 @@
-import {Col, Row, Space} from 'antd';
+import {Col, Row} from 'antd';
 import StellarHelpers, {getStellarAsset, TomlAssetInformation} from '../../StellarHelpers';
 import React, {useEffect, useState} from 'react';
 import AssetImage from '../AssetImage';
@@ -53,7 +53,7 @@ export default function AssetPresenter({code}: AssetProps) {
 
     const assetHref = expertUrl(`asset/${asset.getCode()}${asset.isNative()?'':'-'+asset.getIssuer()}`).href;
     return (
-        <Row align="middle" gutter={16}>
+        <Row align="middle" gutter={2}>
             <Col flex="40px">
                 <AssetImage asset={asset} assetInformation={assetInformation} />
             </Col>
@@ -63,7 +63,7 @@ export default function AssetPresenter({code}: AssetProps) {
                        target="_blank"
                        rel="noreferrer">
                         {assetInformation.name??assetInformation.code}
-                    </a><Space wrap/>
+                    </a>
                 </Row>
                 <Row>
                     <AssetIssuer code={assetInformation.code!} domain={assetInformation.domain} issuer={asset.getIssuer()} />

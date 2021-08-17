@@ -8,8 +8,13 @@ import {ServerApi} from 'stellar-sdk';
 import {AccountState} from '../../AccountSelector';
 import {useParams} from 'react-router-dom';
 import StellarAddressLink from '../StellarAddressLink';
+import {TransactionCallBuilder} from "stellar-sdk/lib/transaction_call_builder";
+import URI from 'urijs';
+import BigNumber from "bignumber.js";
 
-type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
+interface ClaimableBalanceRecord extends ServerApi.ClaimableBalanceRecord {
+    transaction_memo?: string,
+}
 
 const loadBalancesMax = 100;
 
@@ -18,22 +23,25 @@ const tableColumns = () => [
         title: 'Amount',
         dataIndex: 'amount',
         key: 'amount',
-        width: 200,
+        render: (amount: string) => new BigNumber(amount).round(8).toFormat(),
     },
     {
         title: 'Asset',
         dataIndex: 'asset',
         key: 'asset',
         render: (asset: string) => <AssetPresenter code={asset} />,
-        width: 300,
+
     },
     {
         title: 'Sender',
         dataIndex: 'sponsor',
         key: 'sponsor',
         render: (address: string) => <StellarAddressLink id={address} length={9} />,
-        width: 250,
     },
+    {
+        title: 'Memo',
+        dataIndex: 'transaction_memo',
+    }
 ];
 
 interface LoadClaimableBalancesParams {
@@ -61,7 +69,15 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                     return cachedFetch(new URL(asset.getIssuer(), accountsUrl).href)
                         .then(res => res.status === 200);
                 }))
-                .then(issuerFunded => records.filter((_, index) => issuerFunded[index]));
+                .then(issuerFunded => records.filter((_, index) => issuerFunded[index]))
+                .then(async filteredRecords => await Promise.all(filteredRecords.map(record => {
+                    return new TransactionCallBuilder(new URI(baseUrl))
+                        .forClaimableBalance(record.id)
+                        .call()
+                        .then(({records: transactionRecords}) => ({
+                            ...record, transaction_memo: transactionRecords[0]?.memo
+                        } as ClaimableBalanceRecord))
+                })));
 
             const nextCursor = json._links.self.href !== json._links.next.href
                 ? new URL(json._links.next.href).searchParams.get('cursor')??''
