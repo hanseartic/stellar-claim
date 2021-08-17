@@ -26,7 +26,7 @@ const balancesTableColumns = () => [
 
 export default function AccountOverview() {
     const {horizonUrl} = StellarHelpers();
-    const { accountInformation, } = useApplicationState();
+    const {accountInformation} = useApplicationState();
     const [accountBalances, setAccountBalances] = useState<AccountBalanceRecord[]>([]);
     const [accountCreated, setAccountCreated] = useState<{date?: string, by?: string}>({})
 
@@ -43,7 +43,8 @@ export default function AccountOverview() {
                 .then(operations => operations?.records.find(op => op.type === Horizon.OperationResponseType.createAccount) as ServerApi.CreateAccountOperationRecord)
                 .then((createAccountOperation: ServerApi.CreateAccountOperationRecord) => {
                     setAccountCreated({by: createAccountOperation.funder, date: createAccountOperation.created_at});
-                });
+                })
+                .catch(() => setAccountCreated({}));
 
             setAccountBalances(accountInformation.account?.balances.map(
                 (balanceLine) => {
@@ -71,6 +72,8 @@ export default function AccountOverview() {
                     };
                 }
             ));
+        } else {
+            setAccountBalances([]);
         }
         // eslint-disable-next-line
     }, [accountInformation.account]);
