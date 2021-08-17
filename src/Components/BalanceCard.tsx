@@ -19,11 +19,11 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const {horizonUrl} = StellarHelpers();
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
 
+    const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>): Promise<BigNumber> => {
+        if (!offersCollection.records.length) return new Promise((resolve) => resolve(new BigNumber(0)));
 
-    const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>, demand: BigNumber): BigNumber|Promise<BigNumber> => {
-        if (!offersCollection.records.length) return demand;
         return offersCollection.next()
-            .then(collection => collect(collection, demand))
+            .then(collect)
             .then(currentDemand => offersCollection.records
                 .map(record => {
                     // amount:    amount of counter-asset the buyer is willing to spend
@@ -42,10 +42,8 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 .buying(getStellarAsset(balanceRecord.asset))
                 .limit(200)
                 .call()
-                .then(offersCollection => {
-                    return collect(offersCollection, new BigNumber(0));
-                })
-                .then(setAssetDemand)
+                .then(collect)
+                .then(demand => setAssetDemand(demand.round(demand.lt(1)?7:0)))
         }
         // eslint-disable-next-line
     }, []);
@@ -61,7 +59,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         <Badge.Ribbon
             color='red'
             style={{display: (balanceRecord.sellingLiabilities.isZero()?"none":""), marginTop: bidOffset}}
-            text={balanceRecord.sellingLiabilities.isZero()?'':`Offer: ${balanceRecord.sellingLiabilities.toFormat()}`}>
+            text={balanceRecord.sellingLiabilities.isZero()?'':`Bid: ${balanceRecord.sellingLiabilities.toFormat()}`}>
             <Badge.Ribbon
                 color='lime'
                 style={{marginTop: askOffset, display: (balanceRecord.buyingLiabilities.isZero()?"none":"")}}
@@ -73,7 +71,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 <Card size='small' title={balanceRecord.spendable.toFormat() + ' spendable'}>
                     <p>{balanceRecord.balance.sub(balanceRecord.spendable).toFormat()} reserved</p>
                     <b>{balanceRecord.balance.toFormat()} total</b>
-
                 </Card>
             </Badge.Ribbon></Badge.Ribbon></Badge.Ribbon></>);
 }
