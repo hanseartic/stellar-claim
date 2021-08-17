@@ -17,14 +17,21 @@ export type AccountBalanceRecord = {
 
 export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBalanceRecord}) {
     const {horizonUrl} = StellarHelpers();
-    const [assetDemand, setAssetMarket] = useState(new BigNumber(0));
+    const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
 
 
     const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>, demand: BigNumber): BigNumber|Promise<BigNumber> => {
         if (!offersCollection.records.length) return demand;
         return offersCollection.next()
             .then(collection => collect(collection, demand))
-            .then(currentDemand => offersCollection.records.map(record => new BigNumber(record.amount))
+            .then(currentDemand => offersCollection.records
+                .map(record => {
+                    // amount:    amount of counter-asset the buyer is willing to spend
+                    // price_r.n: price-numerator   => this amount of asset should cost the amount given in 'd'
+                    // price_r.d: price-denominator => this amount of counter-asset is offered for the amount given in 'p'
+                    const pricePerUnit = new BigNumber(record.price_r.d).div(new BigNumber(record.price_r.n));
+                    return new BigNumber(record.amount).div(pricePerUnit);
+                })
                 .reduce((prev, current) => prev.add(current), currentDemand)
             );
     };
@@ -36,9 +43,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 .limit(200)
                 .call()
                 .then(offersCollection => {
-                    return collect(offersCollection, assetDemand);
+                    return collect(offersCollection, new BigNumber(0));
                 })
-                .then(setAssetMarket)
+                .then(setAssetDemand)
         }
         // eslint-disable-next-line
     }, []);
@@ -54,15 +61,15 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         <Badge.Ribbon
             color='red'
             style={{display: (balanceRecord.sellingLiabilities.isZero()?"none":""), marginTop: bidOffset}}
-            text={balanceRecord.sellingLiabilities.isZero()?'':'Offer: '+balanceRecord.sellingLiabilities.toFormat()}>
+            text={balanceRecord.sellingLiabilities.isZero()?'':`Offer: ${balanceRecord.sellingLiabilities.toFormat()}`}>
             <Badge.Ribbon
                 color='lime'
                 style={{marginTop: askOffset, display: (balanceRecord.buyingLiabilities.isZero()?"none":"")}}
-                text={balanceRecord.buyingLiabilities.isZero()?'':'Ask: '+balanceRecord.buyingLiabilities.toFormat()}>
+                text={balanceRecord.buyingLiabilities.isZero()?'':`Ask: ${balanceRecord.buyingLiabilities.toFormat()}`}>
                 <Badge.Ribbon
                     color='blue'
                     style={{display: (assetDemand.isZero()?"none":""), marginTop: 25}}
-                    text={assetDemand.isZero()?'':'Market: '+assetDemand.toFormat(0)}>
+                    text={assetDemand.isZero()?'':`Demand: ${assetDemand.toFormat()}`} >
                 <Card size='small' title={balanceRecord.spendable.toFormat() + ' spendable'}>
                     <p>{balanceRecord.balance.sub(balanceRecord.spendable).toFormat()} reserved</p>
                     <b>{balanceRecord.balance.toFormat()} total</b>
