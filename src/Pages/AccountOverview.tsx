@@ -1,4 +1,4 @@
-import {Badge, Card, Table} from 'antd';
+import {Table} from 'antd';
 import React, {useEffect, useState} from 'react';
 import AccountSelector from '../AccountSelector';
 import useApplicationState from '../useApplicationState';
@@ -9,14 +9,8 @@ import URI from 'urijs';
 import {TransactionCallBuilder} from 'stellar-sdk/lib/transaction_call_builder';
 import {Horizon, ServerApi} from 'stellar-sdk';
 import StellarAddressLink from '../Components/StellarAddressLink';
+import BalanceCard, { AccountBalanceRecord } from "../Components/BalanceCard";
 
-type AccountBalanceRecord = {
-    asset: string,
-    balance: BigNumber,
-    buyingLiabilities: BigNumber,
-    sellingLiabilities: BigNumber,
-    spendable: BigNumber,
-};
 
 const balancesTableColumns = () => [
     {
@@ -26,20 +20,7 @@ const balancesTableColumns = () => [
     },
     {
         key: 'balance',
-        render: (record: AccountBalanceRecord) => (<>
-            <Badge.Ribbon
-                color='red'
-                style={{display: (record.sellingLiabilities.isZero()?"none":""), marginTop: 25}}
-                text={record.sellingLiabilities.isZero()?'':'Offer: '+record.sellingLiabilities.toFormat()}>
-            <Badge.Ribbon
-                color='lime'
-                style={{marginTop: record.sellingLiabilities.isZero()?25:55, display: (record.buyingLiabilities.isZero()?"none":"")}}
-                text={record.buyingLiabilities.isZero()?'':'Ask: '+record.buyingLiabilities.toFormat()}>
-            <Card size='small' title={record.spendable.toFormat() + ' spendable'}>
-                <p>{record.balance.sub(record.spendable).toFormat()} reserved</p>
-                <b>{record.balance.toFormat()} total</b>
-            </Card>
-        </Badge.Ribbon></Badge.Ribbon></>)
+        render: (balanceRecord: AccountBalanceRecord) => <BalanceCard balanceRecord={balanceRecord} />
     }
 ];
 
@@ -77,6 +58,7 @@ export default function AccountOverview() {
                     }
 
                     return {
+                        account: accountInformation.account!,
                         asset: balanceLine.asset_type !== 'native'
                             ? `${balanceLine.asset_code}:${balanceLine.asset_issuer}`
                             : 'native:XLM',
