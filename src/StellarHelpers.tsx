@@ -37,8 +37,13 @@ const cachedResolveToml = memoize(StellarTomlResolver.resolve, {promise: true});
 const getTomlAssetInformation = async (url: (path: string) => URL, asset: Asset): Promise<TomlAssetInformation> => {
     if (asset.isNative()) return Promise.reject<NoTomlInformation>({reason: 'native', code: asset.getCode()});
 
+    const knownDomains = {
+        'GDM4RQUQQUVSKQA7S6EM7XBZP3FCGH4Q7CL6TABQ7B2BEJ5ERARM2M5M': 'velo.org',
+    };
+
     return {
         ...await cachedFetchJson(url('/accounts/' + asset.getIssuer()).href)
+            .then((json: any) => ({...{home_domain: knownDomains[json.id as keyof{}]}, ...json}))
             .then((json: any) => (!json.home_domain)
                 ? Promise.reject(`No home domain set for ${asset}.`)
                 : json.home_domain.replace(/^(http)s?:\/\/|\/$/g, '')
