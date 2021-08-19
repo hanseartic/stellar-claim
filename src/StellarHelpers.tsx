@@ -39,11 +39,16 @@ const getTomlAssetInformation = async (url: (path: string) => URL, asset: Asset)
 
     const knownDomains = {
         'GDM4RQUQQUVSKQA7S6EM7XBZP3FCGH4Q7CL6TABQ7B2BEJ5ERARM2M5M': 'velo.org',
+        'GAP5LETOV6YIE62YAM56STDANPRDO7ZFDBGSNHJQIYGGKSMOZAHOOS2S': 'k.tempocrypto.com'
     };
+
+    const overrideHomeDomain = (id: string): {home_domain?: string} => {
+        return knownDomains[id as keyof{}] ? {home_domain: knownDomains[id as keyof{}]} : {};
+    }
 
     return {
         ...await cachedFetchJson(url('/accounts/' + asset.getIssuer()).href)
-            .then((json: any) => ({...{home_domain: knownDomains[json.id as keyof{}]}, ...json}))
+            .then((json: any) => ({...json, ...overrideHomeDomain(json.id)}))
             .then((json: any) => (!json.home_domain)
                 ? Promise.reject(`No home domain set for ${asset}.`)
                 : json.home_domain.replace(/^(http)s?:\/\/|\/$/g, '')
