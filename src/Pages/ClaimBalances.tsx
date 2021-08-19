@@ -49,7 +49,7 @@ const generateClaimTransactionForAccountOnNetwork = (selectedBalances: Claimable
             transactionBuilder.addOperation(Operation.changeTrust({
                 asset: getStellarAsset(balance.asset),
             }));
-            missingTrustLineCodes.slice(missingTrustLineIndex, 1);
+            missingTrustLineCodes.splice(missingTrustLineIndex, 1);
         }
         transactionBuilder.addOperation(Operation.claimClaimableBalance({
             balanceId: balance.id,
@@ -118,7 +118,7 @@ export default function ClaimBalances() {
 
                     notification.error({
                         message: networkError.response.data?.title??networkError.message,
-                        description: responseData.extras.result_codes.operations.map((v, k) => (<div key={k}>{v}</div>))
+                        description: responseData.extras.result_codes.operations?.map((v, k) => (<div key={k}>{v}</div>))??''
                     });
                     return;
                 }
