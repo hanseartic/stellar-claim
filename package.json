@@ -1,6 +1,6 @@
 {
-  "name": "xlm_claim",
-  "version": "0.2.1",
+  "name": "stellar-claim",
+  "version": "0.2.2",
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^4.6.2",
