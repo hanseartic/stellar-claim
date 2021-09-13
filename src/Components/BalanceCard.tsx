@@ -1,5 +1,5 @@
 import {BigNumber} from "bignumber.js";
-import {Badge, Button, Card, Input, Popover} from "antd";
+import {Badge, Button, Card, Col, Input, Popover, Row, Switch} from "antd";
 import {SendOutlined} from "@ant-design/icons";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
@@ -37,12 +37,15 @@ export type AccountBalanceRecord = {
 
 export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBalanceRecord}) {
     const {accountInformation, setAccountInformation} = useApplicationState();
-    const {getSelectedNetwork, horizonUrl} = StellarHelpers();
+    const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
+    const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
     const [sendPopoverVisible, setSendPopoverVisible] = useState(false);
     const [sendAmount, setSendAmount] = useState('')
     const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
     const [destinationAccount, setDestinationAccount] = useState<AccountResponse>()
+    const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
+    const [sendAsClaimable, setSendAsClaimable] = useState(true);
     const [destinationAccountId, setDestinationAccountId] = useState('')
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
     const [xdr, setXDR] = useState('');
@@ -66,64 +69,100 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     };
 
     const saveXDR = () => {
-        // (sender: string, destination: string, asset: string, amount: string, network: "PUBLIC"|"TESTNET") => {
-        const claimants = [
-            new Claimant(
-                destinationAccount!.accountId(),
-                Claimant.predicateUnconditional()
-            )
-        ];
-        if (destinationAccount?.id !== accountInformation.account!.id) {
-            const claimBack = new Claimant(
-                accountInformation.account!.id,
-                Claimant.predicateNot(Claimant.predicateBeforeRelativeTime(new BigNumber(1)
-                    // .times(new BigNumber(60)) // a minute
-                    // .times(new BigNumber(60)) // an hour
-                    // .times(new BigNumber(24)) // a day
-                    // .times(new BigNumber(7))  // a week
-                    .toString())));
-            claimants.push(claimBack);
-        }
-        const transactionXDR = new TransactionBuilder(
+
+        const asset = getStellarAsset(balanceRecord.asset);
+        const transactionBuilder = new TransactionBuilder(
             accountInformation.account!,
             {fee: BASE_FEE, networkPassphrase: Networks[getSelectedNetwork()]})
-            .addMemo(Memo.text('via balances.lumens.space'))
+            .addMemo(Memo.text('via balances.lumens.space'));
+        if (sendAsClaimable) {
+            const claimants = [
+                new Claimant(
+                    destinationAccount!.accountId(),
+                    Claimant.predicateUnconditional()
+                )
+            ];
+            if (destinationAccount?.id !== accountInformation.account!.id) {
+                const claimBack = new Claimant(
+                    accountInformation.account!.id,
+                    Claimant.predicateNot(Claimant.predicateBeforeRelativeTime(new BigNumber(1)
+                        // .times(new BigNumber(60)) // a minute
+                        // .times(new BigNumber(60)) // an hour
+                        // .times(new BigNumber(24)) // a day
+                        // .times(new BigNumber(7))  // a week
+                        .toString())));
+                claimants.push(claimBack);
+            }
+            transactionBuilder
             .addOperation(Operation.createClaimableBalance({
                 amount: sendAmount,
-                asset: getStellarAsset(balanceRecord.asset),
+                asset: asset,
                 claimants: claimants,
             }))
+        } else {
+            transactionBuilder.addOperation(Operation.payment({
+                destination: destinationAccount!.accountId(),
+                amount: sendAmount,
+                asset: asset,
+            }));
+        }
+        const transactionXDR = transactionBuilder
             .setTimeout(0)
             .build().toXDR();
         setXDR(transactionXDR);
     };
 
+
     const sendPopoverContent = <>
-        <Input
-            allowClear
-            onChange={e => setSendAmount(e.target.value)}
-            placeholder={balanceRecord.spendable.toFormat().replace(',','')}
-            prefix={<FontAwesomeIcon icon={faCoins} />}
-            suffix={<FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
-                setSendAmount(balanceRecord.spendable.toFormat().replace(',',''))
-            } />}
-            value={sendAmount}
-            style={{borderColor:sendAmountInvalid?'red':undefined}}
-        />
-        <Input
-            allowClear
-            onChange={e => setDestinationAccountId(e.target.value)}
-            placeholder={Keypair.random().publicKey()}
-            prefix={<FontAwesomeIcon icon={faPeopleArrows}/>}
-            value={destinationAccountId}
-            style={{borderColor:destinationAccountInvalid?'red':undefined}}
-        />
+        <Row>
+            <Input
+                allowClear
+                onChange={e => setSendAmount(e.target.value)}
+                placeholder={balanceRecord.spendable.toFormat().replace(',','')}
+                prefix={<FontAwesomeIcon icon={faCoins} />}
+                suffix={<FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
+                    setSendAmount(balanceRecord.spendable.toFormat().replace(',',''))
+                } />}
+                value={sendAmount}
+                style={{borderColor:sendAmountInvalid?'red':undefined}}
+            />
+        </Row>
+        <Row>
+            <Input
+                allowClear
+                onChange={e => setDestinationAccountId(e.target.value)}
+                placeholder={Keypair.random().publicKey()}
+                prefix={<FontAwesomeIcon icon={faPeopleArrows}/>}
+                value={destinationAccountId}
+                style={{borderColor:destinationAccountInvalid?'red':undefined, width: '42em'}}
+            />
+        </Row>
+        <Row style={{paddingTop: 5, paddingBottom: 5}}>
+            <Col>
+                <Switch
+                    defaultChecked={sendAsClaimable}
+                    disabled={!destinationCanReceivePayment}
+                    onChange={setSendAsClaimable}
+                    checked={sendAsClaimable}
+                />
+            </Col>
+            <Col>&nbsp;</Col>
+            <Col>
+                Send as <a href='https://developers.stellar.org/docs/glossary/claimable-balance/'
+                   target="_blank"
+                   rel="noreferrer">
+                    claimable balance
+                </a>
+            </Col>
+        </Row>
+        <Row style={{paddingTop: 5, paddingBottom: 5}}>
         <Button
             icon={<FontAwesomeIcon icon={faSatelliteDish} />}
             disabled={destinationAccountInvalid||destinationAccountId.length===0||sendAmountInvalid||!sendAmount}
             loading={submitting}
             onClick={() => saveXDR()}
         >Transfer funds</Button>
+        </Row>
     </>;
 
 
@@ -131,14 +170,35 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         if (balanceRecord.spendable.isZero()) return;
         setSendPopoverVisible(visible);
     }
-
+    useEffect(() => {
+        if (destinationAccount) {
+            const asset = getStellarAsset(balanceRecord.asset);
+            const sendSelf = destinationAccount.accountId() === accountInformation.account?.accountId();
+            const canReceivePayment = !sendSelf && (asset.isNative()
+                || !!destinationAccount.balances.find(b =>
+                    b.asset_type !== 'native'
+                    && b.asset_code === asset.code
+                    && b.asset_issuer === asset.issuer
+                ));
+            if (!canReceivePayment) {
+                setSendAsClaimable(true);
+            }
+            setDestinationCanReceivePayment(canReceivePayment);
+        } else {
+            setDestinationCanReceivePayment(false);
+            setSendAsClaimable(true);
+        }
+    }, [destinationAccount, accountInformation.account, balanceRecord.asset]);
+    useEffect(() => {
+        setHorizonUrl(fnHorizonUrl().href);
+    }, [fnHorizonUrl]);
     useEffect(() => {
         if (xdr) {
             setSubmitting(true);
-            submitTransaction(xdr, accountInformation.account!, horizonUrl().href, getSelectedNetwork())
+            submitTransaction(xdr, accountInformation.account!, horizonUrl, getSelectedNetwork())
                 .then(() => {
                     console.log('sent');
-                    return new Server(horizonUrl().href)
+                    return new Server(horizonUrl)
                         .loadAccount(accountInformation.account!.id)
                         .then(account => setAccountInformation({account: account}));
                 })
@@ -155,7 +215,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     }, [xdr]);
     useEffect(() => {
         if (destinationAccountId.length > 0) {
-            new Server(horizonUrl().href).loadAccount(destinationAccountId)
+            new Server(horizonUrl).loadAccount(destinationAccountId)
                 .then(setDestinationAccount)
                 .then(() => setDestinationAccountInvalid(false))
                 .catch(() => {
@@ -163,6 +223,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     setDestinationAccountInvalid(true);
                 });
         } else {
+            setDestinationAccount(undefined);
             setDestinationAccountInvalid(false);
         }
     }, [destinationAccountId, horizonUrl]);
@@ -177,7 +238,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     }, [balanceRecord.spendable, sendAmount]);
     useEffect(() => {
         if (balanceRecord.asset !== 'native:XLM') {
-            new OfferCallBuilder(new URI(horizonUrl()))
+            new OfferCallBuilder(new URI(horizonUrl))
                 .buying(getStellarAsset(balanceRecord.asset))
                 .limit(200)
                 .call()
@@ -214,7 +275,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             </Badge.Ribbon></Badge.Ribbon></Badge.Ribbon>
         <Popover
             trigger="click"
-            placement="leftBottom"
+            placement="bottomRight"
             visible={sendPopoverVisible}
             onVisibleChange={handleSendPopoverVisibleChange}
             content={sendPopoverContent}
