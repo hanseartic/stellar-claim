@@ -1,11 +1,11 @@
 import {BigNumber} from "bignumber.js";
-import {Badge, Button, Card, Col, Input, Popover, Row, Switch} from "antd";
+import {Badge, Button, Card, Col, Input, Popover, Row, Switch, Tooltip} from "antd";
 import {SendOutlined} from "@ant-design/icons";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
     faCoins,
-    faPeopleArrows, faSatelliteDish
+    faPeopleArrows, faSatelliteDish, faUnlink
 } from '@fortawesome/free-solid-svg-icons';
 import React, {useEffect, useState} from "react";
 import {
@@ -45,6 +45,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
     const [destinationAccount, setDestinationAccount] = useState<AccountResponse>()
     const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
+    const [shouldRemoveTrustline, setShouldRemoveTrustline] = useState(false);
     const [sendAsClaimable, setSendAsClaimable] = useState(true);
     const [destinationAccountId, setDestinationAccountId] = useState('')
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
@@ -106,12 +107,26 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 asset: asset,
             }));
         }
+        if (shouldRemoveTrustline) {
+            if (balanceRecord.balance.eq(sendAmount)) {
+                transactionBuilder.addOperation(Operation.changeTrust({
+                    asset: asset,
+                    limit: '0',
+                }))
+            }
+        }
         const transactionXDR = transactionBuilder
             .setTimeout(0)
             .build().toXDR();
         setXDR(transactionXDR);
     };
 
+    const CBSwitchOverlay = <>
+        Sending a claimable balance allows to send funds before the recipient has established a trust-line.<br />
+        This can only be disabled for assets where the recipient already has a trust-line established (e.g. <b>XLM</b> by default).<br /><br />
+        When sending a claimable balance – in addition to the provided recipient – your sending account will be added as a second recipient.
+        This allows to claim back the asset(s) in case the recipient does not accept or claim the balance on their side.
+    </>
 
     const sendPopoverContent = <>
         <Row>
@@ -119,10 +134,10 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 allowClear
                 onChange={e => setSendAmount(e.target.value)}
                 placeholder={balanceRecord.spendable.toFormat().replace(',','')}
-                prefix={<FontAwesomeIcon icon={faCoins} />}
-                suffix={<FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
+                prefix={<Tooltip overlay='Enter the amount to send'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
+                suffix={<Tooltip overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
                     setSendAmount(balanceRecord.spendable.toFormat().replace(',',''))
-                } />}
+                } /></Tooltip>}
                 value={sendAmount}
                 style={{borderColor:sendAmountInvalid?'red':undefined}}
             />
@@ -132,19 +147,22 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 allowClear
                 onChange={e => setDestinationAccountId(e.target.value)}
                 placeholder={Keypair.random().publicKey()}
-                prefix={<FontAwesomeIcon icon={faPeopleArrows}/>}
+                prefix={<Tooltip overlay='Enter the recipient address'><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
                 value={destinationAccountId}
                 style={{borderColor:destinationAccountInvalid?'red':undefined, width: '42em'}}
             />
         </Row>
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
             <Col>
-                <Switch
-                    defaultChecked={sendAsClaimable}
-                    disabled={!destinationCanReceivePayment}
-                    onChange={setSendAsClaimable}
-                    checked={sendAsClaimable}
-                />
+                <Tooltip
+                    overlay={CBSwitchOverlay}>
+                    <Switch
+                        defaultChecked={sendAsClaimable}
+                        disabled={!destinationCanReceivePayment}
+                        onChange={setSendAsClaimable}
+                        checked={sendAsClaimable}
+                    />
+                </Tooltip>
             </Col>
             <Col>&nbsp;</Col>
             <Col>
@@ -155,6 +173,22 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 </a>
             </Col>
         </Row>
+        {getStellarAsset(balanceRecord.asset).isNative() ? <></> : <Row>
+            <Col>
+                <Tooltip
+                    overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
+                    <Switch
+                        defaultChecked={shouldRemoveTrustline}
+                        onChange={setShouldRemoveTrustline}
+                        checked={shouldRemoveTrustline}
+                        checkedChildren={<FontAwesomeIcon icon={faUnlink}/>}
+                        unCheckedChildren={<FontAwesomeIcon icon={faUnlink}/>}
+                    />
+                </Tooltip>
+            </Col>
+            <Col>&nbsp;</Col>
+            <Col>Remove the trustline when sending all funds</Col>
+        </Row>}
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
         <Button
             icon={<FontAwesomeIcon icon={faSatelliteDish} />}
