@@ -1,6 +1,7 @@
 {
   "name": "stellar-claim",
   "version": "0.2.2",
+  "license": "MIT",
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^4.6.2",
