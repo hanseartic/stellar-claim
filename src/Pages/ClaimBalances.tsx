@@ -2,31 +2,25 @@ import React from 'react';
 
 import ClaimableBalancesOverview from "../Components/ClaimableBalancesList";
 import AccountSelector, {AccountState} from "../AccountSelector";
-import {Button, notification} from "antd";
+import {Button} from "antd";
 import {WalletOutlined} from "@ant-design/icons";
 import useApplicationState from "../useApplicationState";
 import {
     AccountResponse,
     BASE_FEE,
-    Horizon,
     Memo,
-    NetworkError,
     Networks,
     Operation,
     Server,
     ServerApi,
     TransactionBuilder,
-    xdr,
 } from "stellar-sdk";
 import StellarHelpers, {
     getStellarAsset,
-    reasonIsSignatureWeightInsufficient,
-    verifyTransactionSignaturesForAccount
 } from '../StellarHelpers';
-import freighterApi, {signTransaction} from '@stellar/freighter-api';
 
-type TransactionFailed = Horizon.ErrorResponseData.TransactionFailed;
-type TransactionResponse = Horizon.TransactionResponse;
+import {submitTransaction} from "../Components/WalletHandling";
+
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
 
@@ -68,60 +62,12 @@ export default function ClaimBalances() {
         let account = accountInformation.account!;
         setBalancesClaiming(true);
         const unsignedXDR = generateClaimTransactionForAccountOnNetwork(selectedBalances, account, Networks[getSelectedNetwork()])
-        signTransaction(unsignedXDR, getSelectedNetwork())
-            .catch(reason => {
-                freighterApi.getNetwork().then(network => {
-                    if (network !== getSelectedNetwork()) {
-                        notification['warn']({message: 'The network selected in Freighter ('+network+') does not match currently selected network ('+getSelectedNetwork()+').'});
-                    } else {
-                        notification['warn']({message: 'Freighter: '+ reason});
-                    }
-                });
-                throw reason;
-            })
-            .then(signedXDR => TransactionBuilder.fromXDR(signedXDR, Networks[getSelectedNetwork()]))
-            .then(tx => verifyTransactionSignaturesForAccount(tx , account))
-            .then(tx => new Server(horizonUrl().href).submitTransaction(tx))
-            .then(submitTransactionResponse => {
-                type RealTransactionResponse = (TransactionResponse&{successful:boolean});
-                if ((submitTransactionResponse as RealTransactionResponse).successful) {
-                    return true;
-                }
-                const result = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr, 'base64');
-                throw result.result().results();
-            })
-            .then(success => {
-                if (success) {
-                    notification.success({
-                        message: 'The transaction was successfully submitted.',
-                    });
-                }
+
+        submitTransaction(unsignedXDR, account, horizonUrl().href, getSelectedNetwork())
+            .then(() => {
                 new Server(horizonUrl().href)
                     .loadAccount(account.id)
                     .then(account => setAccountInformation({account: account}));
-            })
-            .catch(reason => {
-                if (typeof reason === 'string') {
-                    return;
-                }
-                if (reasonIsSignatureWeightInsufficient(reason)) {
-                    notification.error({
-                        message: 'Transaction signature weight not sufficient',
-                        description: `The signature's weight (${reason.signaturesWeight}) does not meet the required threshold for this transaction (${reason.requiredThreshold}). Consider using another key for signing. Multisig is not yet supported.`,
-                        duration: 20,
-                    });
-                    return;
-                }
-                if ('response' in reason && 'message' in reason) {
-                    const networkError = reason as NetworkError;
-                    const responseData = networkError.response.data as TransactionFailed;
-
-                    notification.error({
-                        message: networkError.response.data?.title??networkError.message,
-                        description: responseData.extras.result_codes.operations?.map((v, k) => (<div key={k}>{v}</div>))??''
-                    });
-                    return;
-                }
             })
             .finally(() => {
                 setTimeout(() => setBalancesClaiming(false), 200);

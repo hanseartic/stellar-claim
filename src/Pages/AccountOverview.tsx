@@ -12,7 +12,7 @@ import StellarAddressLink from '../Components/StellarAddressLink';
 import BalanceCard, { AccountBalanceRecord } from "../Components/BalanceCard";
 
 
-const balancesTableColumns = () => [
+const balancesTableColumns = [
     {
         key: 'asset',
         dataIndex: 'asset',
@@ -83,7 +83,7 @@ export default function AccountOverview() {
         <>Account {shortAddress(accountInformation.account?.id??'', 9)} created on {accountCreated.date} by <StellarAddressLink id={accountCreated.by} length={9} /></>
         <Table
             showHeader={false}
-            columns={balancesTableColumns()}
+            columns={balancesTableColumns}
             dataSource={accountBalances}
             rowKey='asset'
             pagination={false}
