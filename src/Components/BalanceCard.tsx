@@ -50,7 +50,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
     const [xdr, setXDR] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    BigNumber.config({DECIMAL_PLACES: 7, EXPONENTIAL_AT: 8});
 
     const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>): Promise<BigNumber> => {
         if (!offersCollection.records.length) return new Promise((resolve) => resolve(new BigNumber(0)));
@@ -133,10 +132,10 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             <Input
                 allowClear
                 onChange={e => setSendAmount(e.target.value)}
-                placeholder={balanceRecord.spendable.toString()}
+                placeholder={balanceRecord.spendable.toFormat()}
                 prefix={<Tooltip overlay='Enter the amount to send'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
                 suffix={<Tooltip overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
-                    setSendAmount(balanceRecord.spendable.toString())
+                    setSendAmount(balanceRecord.spendable.toFormat())
                 } /></Tooltip>}
                 value={sendAmount}
                 style={{borderColor:sendAmountInvalid?'red':undefined}}
@@ -272,7 +271,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     setSendAmountInvalid(true);
                 }
                 if (send.decimalPlaces() > 7) {
-                   setSendAmount(send.round(7, BigNumber.ROUND_UP).toString(10))
+                   setSendAmount(send.round(7, BigNumber.ROUND_UP).toFormat());
                 }
             } catch (e) {
                 setSendAmountInvalid(true);
