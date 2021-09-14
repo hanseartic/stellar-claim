@@ -51,6 +51,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
     const [xdr, setXDR] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    BigNumber.config({DECIMAL_PLACES: 7, EXPONENTIAL_AT: 8});
 
     const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>): Promise<BigNumber> => {
         if (!offersCollection.records.length) return new Promise((resolve) => resolve(new BigNumber(0)));
@@ -133,10 +134,10 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             <Input
                 allowClear
                 onChange={e => setSendAmount(e.target.value)}
-                placeholder={balanceRecord.spendable.toFormat().replace(',','')}
+                placeholder={balanceRecord.spendable.toString()}
                 prefix={<Tooltip overlay='Enter the amount to send'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
                 suffix={<Tooltip overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
-                    setSendAmount(balanceRecord.spendable.toFormat().replace(',',''))
+                    setSendAmount(balanceRecord.spendable.toString())
                 } /></Tooltip>}
                 value={sendAmount}
                 style={{borderColor:sendAmountInvalid?'red':undefined}}
@@ -187,7 +188,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 </Tooltip>
             </Col>
             <Col>&nbsp;</Col>
-            <Col>Remove the trustline when sending all funds</Col>
+            <Col>Remove the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> when sending all funds</Col>
         </Row>}
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
         <Button
@@ -266,8 +267,11 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         if (sendAmount !== undefined && sendAmount !== '') {
             try {
                 const send = new BigNumber(sendAmount.replace(',',''));
-                if (send.greaterThan(balanceRecord.spendable) || send.isZero() || send.lessThan('0.0000001')) {
+                if (send.greaterThan(balanceRecord.spendable) || send.lessThan('0.0000001')) {
                     setSendAmountInvalid(true);
+                }
+                if (send.decimalPlaces() > 7) {
+                   setSendAmount(send.round(7, BigNumber.ROUND_UP).toString(10))
                 }
             } catch (e) {
                 setSendAmountInvalid(true);
