@@ -4,7 +4,7 @@ import {SendOutlined} from "@ant-design/icons";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
-    faCoins,
+    faCoins, faHandHolding,
     faPeopleArrows, faSatelliteDish, faUnlink
 } from '@fortawesome/free-solid-svg-icons';
 import React, {useEffect, useState} from "react";
@@ -162,6 +162,8 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                         disabled={!destinationCanReceivePayment}
                         onChange={setSendAsClaimable}
                         checked={sendAsClaimable}
+                        checkedChildren={<FontAwesomeIcon icon={faHandHolding}/>}
+                        unCheckedChildren={<SendOutlined />}
                     />
                 </Tooltip>
             </Col>
