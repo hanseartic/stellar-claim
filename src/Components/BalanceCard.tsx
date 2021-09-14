@@ -264,8 +264,12 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     useEffect(() => {
         setSendAmountInvalid(false);
         if (sendAmount !== undefined && sendAmount !== '') {
-            const send = new BigNumber(sendAmount.replace(',',''));
-            if (send.greaterThan(balanceRecord.spendable) || send.isZero() || send.lessThan('0.0000001')) {
+            try {
+                const send = new BigNumber(sendAmount.replace(',',''));
+                if (send.greaterThan(balanceRecord.spendable) || send.isZero() || send.lessThan('0.0000001')) {
+                    setSendAmountInvalid(true);
+                }
+            } catch (e) {
                 setSendAmountInvalid(true);
             }
         }
