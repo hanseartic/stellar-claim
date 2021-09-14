@@ -5,7 +5,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
     faCoins, faHandHolding,
-    faPeopleArrows, faSatelliteDish, faUnlink
+    faPeopleArrows, faSatelliteDish, faLink, faUnlink
 } from '@fortawesome/free-solid-svg-icons';
 import React, {useEffect, useState} from "react";
 import {
@@ -36,7 +36,7 @@ export type AccountBalanceRecord = {
 };
 
 export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBalanceRecord}) {
-    const {accountInformation, setAccountInformation} = useApplicationState();
+    const {accountInformation, setAccountInformation, autoRemoveTrustlines, setAutoRemoveTrustlines} = useApplicationState();
     const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
     const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
@@ -45,7 +45,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
     const [destinationAccount, setDestinationAccount] = useState<AccountResponse>()
     const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
-    const [shouldRemoveTrustline, setShouldRemoveTrustline] = useState(false);
     const [sendAsClaimable, setSendAsClaimable] = useState(true);
     const [destinationAccountId, setDestinationAccountId] = useState('')
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
@@ -108,7 +107,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 asset: asset,
             }));
         }
-        if (shouldRemoveTrustline) {
+        if (autoRemoveTrustlines) {
             if (balanceRecord.balance.eq(sendAmount)) {
                 transactionBuilder.addOperation(Operation.changeTrust({
                     asset: asset,
@@ -181,16 +180,16 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 <Tooltip
                     overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
                     <Switch
-                        defaultChecked={shouldRemoveTrustline}
-                        onChange={setShouldRemoveTrustline}
-                        checked={shouldRemoveTrustline}
+                        defaultChecked={autoRemoveTrustlines}
+                        onChange={setAutoRemoveTrustlines}
+                        checked={autoRemoveTrustlines}
                         checkedChildren={<FontAwesomeIcon icon={faUnlink}/>}
-                        unCheckedChildren={<FontAwesomeIcon icon={faUnlink}/>}
+                        unCheckedChildren={<FontAwesomeIcon icon={faLink}/>}
                     />
                 </Tooltip>
             </Col>
             <Col>&nbsp;</Col>
-            <Col>Remove the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> when sending all funds</Col>
+            <Col>{autoRemoveTrustlines?'Remove':'Keep'} the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> when sending all funds</Col>
         </Row>}
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
         <Button

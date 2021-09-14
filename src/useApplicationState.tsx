@@ -6,6 +6,7 @@ type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
 export interface ApplicationState extends ApplicationContextState {
     setAccountInformation: (accountInformation: Partial<SelectedAccountInformation>) => void;
+    setAutoRemoveTrustlines: (autoRemoveTrustlines: boolean) => void;
     setBalancesClaiming: (balancesClaiming: boolean) => void;
     setBalancesLoading: (balancesLoading: boolean) => void;
     setClaimBalancesXDR: (claimBalancesXDR: string) => void;
@@ -27,6 +28,9 @@ const useApplicationState: () => ApplicationState = () => {
             ...state,
             accountInformation: {...state.accountInformation, ...accountInformation}
         }));
+    }
+    function setAutoRemoveTrustlines(autoRemoveTrustlines: boolean) {
+        setState(state => ({...state, autoRemoveTrustlines}));
     }
     function setBalancesClaiming(balancesClaiming: boolean) {
         setState(state => ({...state, balancesClaiming}));
@@ -50,6 +54,7 @@ const useApplicationState: () => ApplicationState = () => {
     return {
         ...state,
         setAccountInformation,
+        setAutoRemoveTrustlines,
         setBalancesClaiming,
         setBalancesLoading,
         setClaimBalancesXDR,
