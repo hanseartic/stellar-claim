@@ -21,7 +21,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import {Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
-import {AccountState} from "./AccountSelector";
+import {AccountState} from "./Components/AccountSelector";
 
 const { Item: MenuItem, SubMenu } = Menu;
 const { Content, Footer, Header, Sider } = Layout;

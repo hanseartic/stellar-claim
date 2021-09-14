@@ -2,7 +2,7 @@ import {Button, Popover} from "antd";
 import freighterLogo from './freighter.png';
 import React, {useEffect, useState} from "react";
 import freighterApi from '@stellar/freighter-api';
-import useApplicationState from "./useApplicationState";
+import useApplicationState from "../../useApplicationState";
 
 interface FreighterButtonProps {
     onAccount?: (account: string) => void;

@@ -5,7 +5,7 @@ import useApplicationState from '../../useApplicationState';
 import StellarHelpers, {cachedFetch, getStellarAsset} from '../../StellarHelpers';
 import AssetPresenter from '../AssetPresenter';
 import {ServerApi} from 'stellar-sdk';
-import {AccountState} from '../../AccountSelector';
+import {AccountState} from '../AccountSelector';
 import {useParams} from 'react-router-dom';
 import StellarAddressLink from '../StellarAddressLink';
 import {TransactionCallBuilder} from "stellar-sdk/lib/transaction_call_builder";

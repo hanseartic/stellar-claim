@@ -1,6 +1,6 @@
 import {Table} from 'antd';
 import React, {useEffect, useState} from 'react';
-import AccountSelector from '../AccountSelector';
+import AccountSelector from '../Components/AccountSelector';
 import useApplicationState from '../useApplicationState';
 import AssetPresenter from '../Components/AssetPresenter';
 import {BigNumber} from 'bignumber.js';

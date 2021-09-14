@@ -1,6 +1,6 @@
 import React, {createContext, Dispatch, ReactNode, SetStateAction, useEffect, useState,} from 'react';
 import {ServerApi} from "stellar-sdk";
-import {SelectedAccountInformation} from './AccountSelector';
+import {SelectedAccountInformation} from './Components/AccountSelector';
 
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 

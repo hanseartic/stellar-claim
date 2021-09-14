@@ -1,7 +1,7 @@
 import {useContext} from 'react';
 import {ApplicationState as ApplicationContextState, ApplicationContext} from './ApplicationContext';
 import {ServerApi} from "stellar-sdk";
-import {SelectedAccountInformation} from "./AccountSelector";
+import {SelectedAccountInformation} from "./Components/AccountSelector";
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
 export interface ApplicationState extends ApplicationContextState {

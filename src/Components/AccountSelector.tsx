@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Alert, AlertProps, Collapse, Input } from 'antd';
 import { AccountResponse, Keypair, NetworkError, NotFoundError, Server } from 'stellar-sdk';
 import FreighterButton from './FreighterButton';
-import useApplicationState from './useApplicationState';
-import StellarHelpers, { shortAddress } from "./StellarHelpers";
+import useApplicationState from '../useApplicationState';
+import StellarHelpers, { shortAddress } from "../StellarHelpers";
 import { MessageOutlined, UpOutlined } from "@ant-design/icons";
 import { useParams } from 'react-router-dom';
 

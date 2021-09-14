@@ -1,7 +1,7 @@
 import React from 'react';
 
 import ClaimableBalancesOverview from "../Components/ClaimableBalancesList";
-import AccountSelector, {AccountState} from "../AccountSelector";
+import AccountSelector, {AccountState} from "../Components/AccountSelector";
 import {Button} from "antd";
 import {WalletOutlined} from "@ant-design/icons";
 import useApplicationState from "../useApplicationState";
