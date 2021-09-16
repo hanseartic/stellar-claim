@@ -5,7 +5,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
     faCoins, faHandHolding,
-    faPeopleArrows, faSatelliteDish, faLink, faUnlink
+    faPeopleArrows, faSatelliteDish, faLink, faUnlink, faCommentDots
 } from '@fortawesome/free-solid-svg-icons';
 import React, {useEffect, useState} from "react";
 import {
@@ -38,18 +38,19 @@ export type AccountBalanceRecord = {
 export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBalanceRecord}) {
     const {accountInformation, setAccountInformation, autoRemoveTrustlines, setAutoRemoveTrustlines} = useApplicationState();
     const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
-    const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
-    const [sendPopoverVisible, setSendPopoverVisible] = useState(false);
-    const [sendAmount, setSendAmount] = useState('')
-    const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
+    const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [destinationAccount, setDestinationAccount] = useState<AccountResponse>()
     const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
-    const [sendAsClaimable, setSendAsClaimable] = useState(true);
     const [destinationAccountId, setDestinationAccountId] = useState('')
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
-    const [xdr, setXDR] = useState('');
+    const [sendAmount, setSendAmount] = useState('')
+    const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
+    const [sendAsClaimable, setSendAsClaimable] = useState(true);
+    const [sendPopoverVisible, setSendPopoverVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [transactionMemo, setTransactionMemo] = useState('');
+    const [xdr, setXDR] = useState('');
 
     const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>): Promise<BigNumber> => {
         if (!offersCollection.records.length) return new Promise((resolve) => resolve(new BigNumber(0)));
@@ -74,7 +75,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         const transactionBuilder = new TransactionBuilder(
             accountInformation.account!,
             {fee: BASE_FEE, networkPassphrase: Networks[getSelectedNetwork()]})
-            .addMemo(Memo.text('via balances.lumens.space'));
+            .addMemo(Memo.text(transactionMemo.length>0?transactionMemo:'via balances.lumens.space'));
         if (sendAsClaimable) {
             const claimants = [
                 new Claimant(
@@ -149,6 +150,16 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 prefix={<Tooltip overlay='Enter the recipient address'><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
                 value={destinationAccountId}
                 style={{borderColor:destinationAccountInvalid?'red':undefined, width: '42em'}}
+            />
+        </Row>
+        <Row>
+            <Input
+                allowClear
+                maxLength={28}
+                onChange={e => setTransactionMemo(e.target.value)}
+                prefix={<Tooltip overlay='Enter a memo'><FontAwesomeIcon icon={faCommentDots}/></Tooltip>}
+                placeholder='via balances.lumens.space'
+                value={transactionMemo}
             />
         </Row>
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
