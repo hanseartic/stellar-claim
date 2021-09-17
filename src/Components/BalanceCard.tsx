@@ -5,7 +5,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
     faCoins, faHandHolding,
-    faPeopleArrows, faSatelliteDish, faLink, faUnlink, faCommentDots
+    faPeopleArrows, faSatelliteDish, faLink, faUnlink, faCommentDots, faDumpsterFire
 } from '@fortawesome/free-solid-svg-icons';
 import React, {useEffect, useState} from "react";
 import {
@@ -149,6 +149,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 onChange={e => setDestinationAccountId(e.target.value)}
                 placeholder={Keypair.random().publicKey()}
                 prefix={<Tooltip overlay='Enter the recipient address'><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
+                /*suffix={<Tooltip overlay='Click here to burn the asset'><FontAwesomeIcon icon={faDumpsterFire} onClick={() => { setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer()); }}/></Tooltip>}*/
                 value={destinationAccountId}
                 style={{borderColor:destinationAccountInvalid?'red':undefined, width: '42em'}}
             />
@@ -207,7 +208,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         </Row>}
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
         <Button
-            icon={<FontAwesomeIcon icon={faSatelliteDish} />}
+            icon={<FontAwesomeIcon style={{marginRight: '0.3em'}} icon={isBurn?faDumpsterFire:faSatelliteDish} />}
             disabled={destinationAccountInvalid||destinationAccountId.length===0||sendAmountInvalid||!sendAmount}
             loading={submitting}
             onClick={() => saveXDR()}
