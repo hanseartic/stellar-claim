@@ -44,6 +44,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
     const [destinationAccountId, setDestinationAccountId] = useState('')
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
+    const [isBurn, setIsBurn] = useState(false);
     const [sendAmount, setSendAmount] = useState('')
     const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
     const [sendAsClaimable, setSendAsClaimable] = useState(true);
@@ -152,6 +153,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 style={{borderColor:destinationAccountInvalid?'red':undefined, width: '42em'}}
             />
         </Row>
+        {!isBurn ? <></> : <Row>
+        Sending to the issuer account will burn the selected amount of this asset!
+        </Row>}
         <Row>
             <Input
                 allowClear
@@ -168,7 +172,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     overlay={CBSwitchOverlay}>
                     <Switch
                         defaultChecked={sendAsClaimable}
-                        disabled={!destinationCanReceivePayment}
+                        disabled={!destinationCanReceivePayment && !isBurn}
                         onChange={setSendAsClaimable}
                         checked={sendAsClaimable}
                         checkedChildren={<FontAwesomeIcon icon={faHandHolding}/>}
@@ -207,7 +211,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             disabled={destinationAccountInvalid||destinationAccountId.length===0||sendAmountInvalid||!sendAmount}
             loading={submitting}
             onClick={() => saveXDR()}
-        >Transfer funds</Button>
+        >{isBurn?'Burn':'Transfer'} funds</Button>
         </Row>
     </>;
 
@@ -220,17 +224,25 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         if (destinationAccount) {
             const asset = getStellarAsset(balanceRecord.asset);
             const sendSelf = destinationAccount.accountId() === accountInformation.account?.accountId();
+            const shouldBurn = destinationAccount.id === asset.getIssuer();
             const canReceivePayment = !sendSelf && (asset.isNative()
                 || !!destinationAccount.balances.find(b =>
                     b.asset_type !== 'native'
                     && b.asset_code === asset.code
                     && b.asset_issuer === asset.issuer
-                ));
+                )
+                || shouldBurn
+            );
+            setIsBurn(shouldBurn);
             if (!canReceivePayment) {
                 setSendAsClaimable(true);
             }
+            if (shouldBurn) {
+                setSendAsClaimable(false);
+            }
             setDestinationCanReceivePayment(canReceivePayment);
         } else {
+            setIsBurn(false);
             setDestinationCanReceivePayment(false);
             setSendAsClaimable(true);
         }
