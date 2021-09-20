@@ -1,6 +1,6 @@
 import {BigNumber} from "bignumber.js";
 import {Badge, Button, Card, Col, Input, Popover, Row, Switch, Tooltip} from "antd";
-import {SendOutlined} from "@ant-design/icons";
+import {DeleteOutlined, FireOutlined, SendOutlined} from "@ant-design/icons";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
@@ -39,11 +39,14 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const {accountInformation, setAccountInformation, autoRemoveTrustlines, setAutoRemoveTrustlines} = useApplicationState();
     const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
-    const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
+    const [burnRemovePopoverVisible, setBurnRemovePopoverVisible] = useState(false);
+    const [canBurn, setCanBurn] = useState(false);
+    const [canRemoveTrust, setCanRemoveTrust] = useState(false);
     const [destinationAccount, setDestinationAccount] = useState<AccountResponse>()
     const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
     const [destinationAccountId, setDestinationAccountId] = useState('')
     const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
+    const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [isBurn, setIsBurn] = useState(false);
     const [sendAmount, setSendAmount] = useState('')
     const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
@@ -129,6 +132,82 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         This allows to claim back the asset(s) in case the recipient does not accept or claim the balance on their side.
     </>
 
+    const burnRemovePopoverContent = () => {
+        const asset = getStellarAsset(balanceRecord.asset);
+        const tb = () => {
+            const transactionBuilder = new TransactionBuilder(
+                accountInformation.account!,
+                {fee: BASE_FEE, networkPassphrase: Networks[getSelectedNetwork()]})
+                .addMemo(Memo.text(transactionMemo))
+                .setTimeout(0);
+
+            if (isBurn) {
+                transactionBuilder.addOperation(Operation.payment({
+                    asset: asset,
+                    destination: destinationAccountId,
+                    amount: sendAmount,
+                }));
+            }
+            if (!isBurn || (balanceRecord.balance.eq(sendAmount) && autoRemoveTrustlines)) {
+                transactionBuilder.addOperation(Operation.changeTrust({
+                    asset: asset,
+                    limit: '0',
+                }));
+            }
+            return transactionBuilder;
+        }
+        const burnHint = <>
+            By clicking the button below you will burn all of your spendable funds of this asset.<br /><br />
+            If you only want to burn parts of the spendable funds, use the send-button <br/>
+            and enter the following destination instead:<br/><br/>
+            <pre>{asset.getIssuer()}</pre>
+
+            <Row gutter={16}>
+                <Col span='flex'>
+            <Tooltip
+                overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
+                <Switch
+                    defaultChecked={autoRemoveTrustlines}
+                    onChange={setAutoRemoveTrustlines}
+                    checked={autoRemoveTrustlines}
+                    checkedChildren={<FontAwesomeIcon icon={faUnlink}/>}
+                    unCheckedChildren={<FontAwesomeIcon icon={faLink}/>}
+                />
+            </Tooltip>
+                </Col>
+                <Col span='flex'>{autoRemoveTrustlines?'Remove':'Keep'} the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> if possible</Col>
+            </Row>
+        </>;
+
+        const removeHint = <>
+            By clicking the button below you will remove the trustline to this asset. This will free up 0.5 XLM from the reserve.
+        </>;
+        return (
+        <Card title={isBurn?'Burn spendable amounts of this asset':'Remove trustline for this asset'}>
+            {isBurn?burnHint:removeHint}
+            <Row gutter={16}>
+                <Col flex={1}><Input
+                    allowClear
+                    maxLength={28}
+                    onChange={e => setTransactionMemo(e.target.value)}
+                    prefix={<Tooltip overlay='Enter a memo'><FontAwesomeIcon icon={faCommentDots}/></Tooltip>}
+                    placeholder='via balances.lumens.space'
+                    value={transactionMemo}
+                /></Col>
+            </Row>
+            <Row gutter={16} justify='end'>
+                <Col span='flex'>
+        <Button
+            onClick={() => {
+                setXDR(tb().build().toXDR());
+            }}
+            icon={isBurn?<FireOutlined />:<DeleteOutlined />}
+        >{sendAmount === '0'?'remove':'burn'}</Button>
+                </Col>
+            </Row>
+        </Card>
+        )
+    };
     const sendPopoverContent = <>
         <Row>
             <Input
@@ -190,7 +269,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 </a>
             </Col>
         </Row>
-        {getStellarAsset(balanceRecord.asset).isNative() ? <></> : <Row>
+        {getStellarAsset(balanceRecord.asset).isNative() ? <></> : <Row gutter={16}>
             <Col>
                 <Tooltip
                     overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
@@ -203,7 +282,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     />
                 </Tooltip>
             </Col>
-            <Col>&nbsp;</Col>
             <Col>{autoRemoveTrustlines?'Remove':'Keep'} the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> when sending all funds</Col>
         </Row>}
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
@@ -220,6 +298,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const handleSendPopoverVisibleChange = (visible: any) => {
         if (balanceRecord.spendable.isZero()) return;
         setSendPopoverVisible(visible);
+    }
+    const handleBurnRemovePopoverVisibleChange = (visible: any) => {
+        setBurnRemovePopoverVisible(visible);
     }
     useEffect(() => {
         if (destinationAccount) {
@@ -256,7 +337,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             setSubmitting(true);
             submitTransaction(xdr, accountInformation.account!, horizonUrl, getSelectedNetwork())
                 .then(() => {
-                    console.log('sent');
                     return new Server(horizonUrl)
                         .loadAccount(accountInformation.account!.id)
                         .then(account => setAccountInformation({account: account}));
@@ -268,6 +348,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     setSendAmount('');
                     setSubmitting(false);
                     setSendPopoverVisible(false);
+                    setBurnRemovePopoverVisible(false);
                 });
         }
         // eslint-disable-next-line
@@ -303,6 +384,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         }
     }, [balanceRecord.spendable, sendAmount]);
     useEffect(() => {
+        setIsBurn(isBurn&&!sendAmountInvalid)
+    }, [isBurn, sendAmountInvalid])
+    useEffect(() => {
         if (balanceRecord.asset !== 'native:XLM') {
             new OfferCallBuilder(new URI(horizonUrl))
                 .buying(getStellarAsset(balanceRecord.asset))
@@ -311,6 +395,10 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 .then(collect)
                 .then(demand => setAssetDemand(demand.round(demand.lt(1)?7:0)))
         }
+        setCanBurn(!balanceRecord.spendable.isZero());
+        setCanRemoveTrust(balanceRecord.spendable.isZero()
+            && balanceRecord.balance.isZero()
+            && balanceRecord.buyingLiabilities.isZero());
         // eslint-disable-next-line
     }, []);
 
@@ -339,7 +427,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     <b>{balanceRecord.balance.toFormat()} total</b>
                 </Card>
             </Badge.Ribbon></Badge.Ribbon></Badge.Ribbon>
-        <Popover
+        <Row><Col flex={1}><Popover
             trigger="click"
             placement="bottomRight"
             visible={sendPopoverVisible}
@@ -350,8 +438,28 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 block
                 disabled={balanceRecord.spendable.isZero()}
                 icon={<SendOutlined />}
+                onClick={() => {setSendAmount(''); setDestinationAccountId('');}}
                 >Send
             </Button>
-        </Popover>
+        </Popover></Col>
+            {getStellarAsset(balanceRecord.asset).isNative()?<></>:
+            <Col flex={1}><Popover
+            trigger="click"
+            content={burnRemovePopoverContent}
+            onVisibleChange={handleBurnRemovePopoverVisibleChange}
+            visible={burnRemovePopoverVisible}
+            placement="bottomRight"
+        >
+            <Button
+                block
+                icon={!balanceRecord.spendable.isZero() ? <FireOutlined/> : <DeleteOutlined/>}
+                disabled={!(canBurn || canRemoveTrust)}
+                onClick={() => {
+                    setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer());
+                    setSendAmount(balanceRecord.spendable.toString(10));
+                }}
+            >{!balanceRecord.spendable.isZero()?'Burn':'Remove'}
+            </Button>
+        </Popover></Col>}</Row>
             </>);
 }
