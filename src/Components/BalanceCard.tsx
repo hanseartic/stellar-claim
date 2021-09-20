@@ -134,11 +134,11 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
 
     const burnRemovePopoverContent = () => {
         const asset = getStellarAsset(balanceRecord.asset);
-        const tb = () => {
+        const tb = async () => {
             const transactionBuilder = new TransactionBuilder(
                 accountInformation.account!,
                 {fee: BASE_FEE, networkPassphrase: Networks[getSelectedNetwork()]})
-                .addMemo(Memo.text(transactionMemo))
+                .addMemo(Memo.text(transactionMemo.length>0?transactionMemo:'via balances.lumens.space'))
                 .setTimeout(0);
 
             if (isBurn) {
@@ -147,6 +147,20 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     destination: destinationAccountId,
                     amount: sendAmount,
                 }));
+            } else if (!balanceRecord.buyingLiabilities.isZero()) {
+                // cancel the buy-offers for this asset
+                await accountInformation.account?.offers({limit: 200})
+                    .then(({records}) => { records
+                        .filter(({buying}) => buying.asset_type !== 'native' && buying.asset_code === asset.code && buying.asset_issuer === asset.issuer)
+                        .map(buyingCurrentAssetOffer => transactionBuilder.addOperation(Operation.manageBuyOffer({
+                            buyAmount: '0',
+                            buying: getStellarAsset(`${buyingCurrentAssetOffer.buying.asset_code}:${buyingCurrentAssetOffer.buying.asset_issuer}`),
+                            offerId: buyingCurrentAssetOffer.id,
+                            price: buyingCurrentAssetOffer.price_r,
+                            selling: getStellarAsset(`${buyingCurrentAssetOffer.selling.asset_code??'native'}:${buyingCurrentAssetOffer.selling.asset_issuer}`),
+                            }))
+                        );
+                    })
             }
             if (!isBurn || (balanceRecord.balance.eq(sendAmount) && autoRemoveTrustlines)) {
                 transactionBuilder.addOperation(Operation.changeTrust({
@@ -180,7 +194,14 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         </>;
 
         const removeHint = <>
-            By clicking the button below you will remove the trustline to this asset. This will free up 0.5 XLM from the reserve.
+            By clicking the button below you will remove the trustline to this asset.<br/>
+            This will free up 0.5 XLM from the reserve.
+            {(()=>{if (!balanceRecord.buyingLiabilities.isZero()){
+                return <Row>
+                    There are open offers on SDEX to buy this asset.<br/>
+                    In order to remove the trustline they will be cancelled.
+                </Row>
+            }})()}
         </>;
         return (
         <Card title={isBurn?'Burn spendable amounts of this asset':'Remove trustline for this asset'}>
@@ -198,8 +219,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             <Row gutter={16} justify='end'>
                 <Col span='flex'>
         <Button
+            loading={submitting}
             onClick={() => {
-                setXDR(tb().build().toXDR());
+                tb().then(transactionBuilder => setXDR(transactionBuilder.build().toXDR()));
             }}
             icon={isBurn?<FireOutlined />:<DeleteOutlined />}
         >{sendAmount === '0'?'remove':'burn'}</Button>
@@ -398,7 +420,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         setCanBurn(!balanceRecord.spendable.isZero());
         setCanRemoveTrust(balanceRecord.spendable.isZero()
             && balanceRecord.balance.isZero()
-            && balanceRecord.buyingLiabilities.isZero());
+        );
         // eslint-disable-next-line
     }, []);
 
