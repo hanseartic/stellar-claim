@@ -12,6 +12,7 @@ import {
     AccountResponse,
     BASE_FEE,
     Claimant,
+    Horizon,
     Keypair,
     Memo,
     Networks,
@@ -25,6 +26,10 @@ import URI from "urijs";
 import StellarHelpers, {getStellarAsset} from "../StellarHelpers";
 import useApplicationState from "../useApplicationState";
 import {submitTransaction} from "./WalletHandling";
+
+type BalanceLineAsset = Horizon.BalanceLineAsset;
+type BalanceLineNative = Horizon.BalanceLineNative;
+type BalanceLine = Horizon.BalanceLine;
 
 export type AccountBalanceRecord = {
     account: AccountResponse,
@@ -330,11 +335,15 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             const sendSelf = destinationAccount.accountId() === accountInformation.account?.accountId();
             const shouldBurn = destinationAccount.id === asset.getIssuer();
             const canReceivePayment = !sendSelf && (asset.isNative()
-                || !!destinationAccount.balances.find(b =>
-                    b.asset_type !== 'native'
-                    && b.asset_code === asset.code
-                    && b.asset_issuer === asset.issuer
-                )
+                || !!destinationAccount.balances
+                    .filter((b: BalanceLine): b is (BalanceLineAsset|BalanceLineNative) =>
+                        b.asset_type !== 'liquidity_pool_shares'
+                    )
+                    .find(b =>
+                        b.asset_type !== 'native'
+                        && b.asset_code === asset.code
+                        && b.asset_issuer === asset.issuer
+                    )
                 || shouldBurn
             );
             setIsBurn(shouldBurn);

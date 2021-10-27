@@ -11,6 +11,9 @@ import {Horizon, ServerApi} from 'stellar-sdk';
 import StellarAddressLink from '../Components/StellarAddressLink';
 import BalanceCard, { AccountBalanceRecord } from "../Components/BalanceCard";
 
+type BalanceLineAsset = Horizon.BalanceLineAsset;
+type BalanceLineNative = Horizon.BalanceLineNative;
+type BalanceLine = Horizon.BalanceLine;
 
 const balancesTableColumns = [
     {
@@ -46,8 +49,11 @@ export default function AccountOverview() {
                 })
                 .catch(() => setAccountCreated({}));
 
-            setAccountBalances(accountInformation.account?.balances.map(
-                (balanceLine) => {
+            setAccountBalances(accountInformation.account?.balances
+                .filter((b: BalanceLine): b is (BalanceLineAsset|BalanceLineNative) =>
+                    b.asset_type !== 'liquidity_pool_shares'
+                )
+                .map((balanceLine) => {
                     let reserves = new BigNumber(0);
                     if (balanceLine.asset_type === 'native') {
                         const subentryCount = new BigNumber(accountInformation.account?.subentry_count??0);

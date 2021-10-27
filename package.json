@@ -1,6 +1,6 @@
 {
   "name": "stellar-claim",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "license": "MIT",
   "private": true,
   "dependencies": {
@@ -20,7 +20,7 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",
     "rehype-raw": "^5.1.0",
-    "stellar-sdk": "^8.2.5",
+    "stellar-sdk": "^9.0.1",
     "typescript": "^4.3.4",
     "web-vitals": "^1.1.2"
   },

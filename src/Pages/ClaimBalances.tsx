@@ -8,6 +8,7 @@ import useApplicationState from "../useApplicationState";
 import {
     AccountResponse,
     BASE_FEE,
+    Horizon,
     Memo,
     Networks,
     Operation,
@@ -21,11 +22,17 @@ import StellarHelpers, {
 
 import {submitTransaction} from "../Components/WalletHandling";
 
+type BalanceLineAsset = Horizon.BalanceLineAsset;
+type BalanceLineNative = Horizon.BalanceLineNative;
+type BalanceLine = Horizon.BalanceLine;
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
 
 const generateClaimTransactionForAccountOnNetwork = (selectedBalances: ClaimableBalanceRecord[], account: AccountResponse, networkPassphrase: string) => {
     const existingTrustLineCodes = account.balances
+        .filter((asset: BalanceLine): asset is (BalanceLineAsset|BalanceLineNative) =>
+            asset.asset_type !== 'liquidity_pool_shares'
+        )
         .map(asset => asset.asset_type === 'native'
             ?'native'
             :`${asset.asset_code}:${asset.asset_issuer}`
