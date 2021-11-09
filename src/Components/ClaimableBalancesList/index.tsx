@@ -4,16 +4,18 @@ import {TableRowSelection} from 'antd/lib/table/interface';
 import useApplicationState from '../../useApplicationState';
 import StellarHelpers, {cachedFetch, getStellarAsset} from '../../StellarHelpers';
 import AssetPresenter from '../AssetPresenter';
-import {ServerApi} from 'stellar-sdk';
+import {Horizon, ServerApi} from 'stellar-sdk';
+import {TransactionCallBuilder} from "stellar-sdk/lib/transaction_call_builder";
 import {AccountState} from '../AccountSelector';
 import {useParams} from 'react-router-dom';
 import StellarAddressLink from '../StellarAddressLink';
-import {TransactionCallBuilder} from "stellar-sdk/lib/transaction_call_builder";
 import URI from 'urijs';
 import BigNumber from "bignumber.js";
 
 interface ClaimableBalanceRecord extends ServerApi.ClaimableBalanceRecord {
     transaction_memo?: string,
+    valid_to?: string,
+    destination?: Horizon.Claimant|null,
 }
 
 const loadBalancesMax = 300;
@@ -41,6 +43,13 @@ const tableColumns = () => [
     {
         title: 'Memo',
         dataIndex: 'transaction_memo',
+    },
+    {
+        title: 'Expires',
+        dataIndex: 'valid_to',
+        render: (date?: number) => date
+            ?`${new Date(date).toLocaleString()}`
+            :''
     }
 ];
 
@@ -51,6 +60,26 @@ interface LoadClaimableBalancesParams {
     searchParams: URLSearchParams;
 }
 
+const isValidClaimableBalance = (claimableBalance: ClaimableBalanceRecord) => {
+    if (!claimableBalance.destination) return true;
+    const claimant = claimableBalance.destination;//claimants.find(c => c.destination === destination);
+    if (claimant.predicate.not?.abs_before) {
+        const notBefore = Date.parse(claimant.predicate.not?.abs_before);
+        if (notBefore >= Date.now()) return false;
+    }
+    if (claimant.predicate.abs_before) {
+        const before = Date.parse(claimant.predicate.abs_before);
+        if (before <= Date.now()) return false;
+    }
+    return true;
+}
+
+const getClaimableBalanceExpiryData = (claimableBalance: ClaimableBalanceRecord) => {
+    return claimableBalance.destination?.predicate.abs_before
+        ? Date.parse(claimableBalance.destination.predicate.abs_before)
+        : undefined;
+}
+
 const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: LoadClaimableBalancesParams) => {
     const accountsUrl = new URL('/accounts/', baseUrl);
     const claimableBalancesUrl = new URL('/claimable_balances', baseUrl);
@@ -59,8 +88,12 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
     return fetch(claimableBalancesUrl.href)
         .then(result => result.json())
         .then(async (json) => {
-            const records: ClaimableBalanceRecord[] = json._embedded.records.map((r:any) => ({...r}));
-
+            const records: ClaimableBalanceRecord[] = json._embedded.records
+                .map((r:any) => ({...r, destination: r.claimants.find((c: ClaimableBalanceRecord) => c.destination === searchParams.get('claimant'))}) as ClaimableBalanceRecord)
+                .filter((claimableBalanceRecord: ClaimableBalanceRecord) =>
+                    isValidClaimableBalance(claimableBalanceRecord)
+                )
+            ;
             // only show records, that have a funded issuer account
             const filteredRecords = await Promise
                 .all(records.map(r => {
@@ -75,7 +108,9 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                         .forClaimableBalance(record.id)
                         .call()
                         .then(({records: transactionRecords}) => ({
-                            ...record, transaction_memo: transactionRecords[0]?.memo
+                            ...record,
+                            transaction_memo: transactionRecords[0]?.memo,
+                            valid_to: getClaimableBalanceExpiryData(record),
                         } as ClaimableBalanceRecord))
                 })));
 

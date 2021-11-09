@@ -149,7 +149,7 @@ export default function ClaimBalances() {
         let account = accountInformation.account!;
         setBalancesClaiming(true);
         const unsignedXDR = await generateCleanCBTransactionForAccountOnNetwork(selectedBalances, account, Networks[getSelectedNetwork()], horizonUrl().href);
-        console.log(unsignedXDR);
+
         submitTransaction(unsignedXDR, account, horizonUrl().href, getSelectedNetwork())
             .then(submitTransactionResponse => {
                 if (submitTransactionResponse) {
