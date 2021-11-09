@@ -5,7 +5,7 @@ into the given account.
 ### Why
 On stellar you need to explicitly trust an asset before you can hold it in your account.
 
-By default, you can hold [*Stellar Lumens* (i.e. **XML**)][lumens] in your wallet.
+By default, you can hold [*Stellar Lumens* (i.e. **XLM**)][lumens] in your wallet.
 But there are so [many other][power-of-stellar] assets [out there][explore-assets].
 
 Before a payment with any other assets can be made to your account
