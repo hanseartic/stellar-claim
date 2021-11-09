@@ -24,19 +24,23 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
         .then(tx => verifyTransactionSignaturesForAccount(tx , account))
         .then(tx => server.submitTransaction(tx))
         .then(submitTransactionResponse => {
-            type RealTransactionResponse = (TransactionResponse&{successful:boolean});
-            if ((submitTransactionResponse as RealTransactionResponse).successful) {
-                return true;
+            type RealTransactionResponse = (TransactionResponse & { successful: boolean });
+            return (submitTransactionResponse as RealTransactionResponse);
+        })
+        .then(submitTransactionResponse => {
+            if (submitTransactionResponse.successful) {
+                return submitTransactionResponse;
             }
             const result = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr, 'base64');
             throw result.result().results();
         })
-        .then(success => {
-            if (success) {
+        .then(submitTransactionResponse => {
+            if (submitTransactionResponse.successful) {
                 notification.success({
                     message: 'The transaction was successfully submitted.',
                 });
             }
+            return submitTransactionResponse;
         })
         .catch(reason => {
             if (typeof reason === 'string') {
@@ -50,10 +54,18 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
                 });
                 return;
             }
+
             if ('response' in reason && 'message' in reason) {
                 const networkError = reason as NetworkError;
                 const responseData = networkError.response.data as TransactionFailed;
 
+                if (networkError.response.status === 504) {
+                    notification.error({
+                        message: 'Gateway timed out',
+                        description: networkError.response.data?.title??networkError.message,
+                    });
+                    return;
+                }
                 notification.error({
                     message: networkError.response.data?.title??networkError.message,
                     description: responseData.extras.result_codes.operations?.map((v, k) => (<div key={k}>{v}</div>))??''

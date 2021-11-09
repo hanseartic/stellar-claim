@@ -16,7 +16,7 @@ interface ClaimableBalanceRecord extends ServerApi.ClaimableBalanceRecord {
     transaction_memo?: string,
 }
 
-const loadBalancesMax = 100;
+const loadBalancesMax = 300;
 
 const tableColumns = () => [
     {
