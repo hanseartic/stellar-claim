@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import BigNumber from "bignumber.js";
 import ClaimableBalancesOverview from "../Components/ClaimableBalancesList";
 import AccountSelector, {AccountState} from "../Components/AccountSelector";
@@ -47,6 +47,30 @@ const getMissingBalanceLines = (accountBalances: Horizon.BalanceLine[], assetCod
         .filter(asset => existingTrustLineCodes.indexOf(asset) < 0);
 };
 
+const getEstimatedProceedings = (selectedBalances: ClaimableBalanceRecord[], horizonUrl: string) => {
+    const server = new Server(horizonUrl);
+    return Promise.all(selectedBalances.map(balance => server
+        .strictSendPaths(getStellarAsset(balance.asset), balance.amount, [Asset.native()])
+        .call()
+        .then(({records}) =>
+            records.find(r => new BigNumber(r.destination_amount).times(10000000).greaterThan(BASE_FEE))
+        )
+        .then(sendPath => {
+            const path = sendPath?.path
+                ? sendPath.path.map(p => getStellarAsset(p.asset_code+':'+p.asset_issuer))
+                : [];
+            return {
+                claimableBalanceId: balance.id,
+                asset: balance.asset,
+                amount: balance.amount,
+                path: path,
+                minProceeds: new BigNumber(sendPath?.destination_amount??0).times(0.95).round(7).toString(),
+                trash: sendPath === undefined,
+            }
+        })
+    ));
+};
+
 const generateClaimTransactionForAccountOnNetwork = (selectedBalances: ClaimableBalanceRecord[], account: AccountResponse, networkPassphrase: string) => {
     const missingTrustLineCodes = getMissingBalanceLines(account.balances, selectedBalances.map(b => b.asset));
 
@@ -76,29 +100,8 @@ const generateCleanCBTransactionForAccountOnNetwork = (
 ) => {
     const missingTrustLineCodes = getMissingBalanceLines(account.balances, selectedBalances.map(b => b.asset));
     const transactionBuilder = new TransactionBuilder(account, {fee: BASE_FEE, networkPassphrase: networkPassphrase});
-    const server = new Server(serverUrl);
-    const conversionCosts = new BigNumber(BASE_FEE).times(4);
-    return Promise.all(selectedBalances.map(balance => server
-        .strictSendPaths(getStellarAsset(balance.asset), balance.amount, [Asset.native()])
-        .call()
-        .then(({records}) =>
-            records.find(r => new BigNumber(r.destination_amount).times(10000000).greaterThan(conversionCosts))
-        )
-        .then(sendPath => {
-            const path = sendPath?.path
-                ? sendPath.path.map(p => getStellarAsset(p.asset_code+':'+p.asset_issuer))
-                : [];
-            return {
-                claimableBalanceId: balance.id,
-                asset: balance.asset,
-                amount: balance.amount,
-                path: path,
-                minProceeds: new BigNumber(sendPath?.destination_amount??0).times(0.95).round(7).toString(),
-                trash: sendPath === undefined,
-            }
-        })
-    )).then(balances => {
-        balances.forEach(balance => {
+    return getEstimatedProceedings(selectedBalances, serverUrl)
+        .then(balances => { balances.forEach(balance => {
             const currentAsset = getStellarAsset(balance.asset);
             if (missingTrustLineCodes.includes(balance.asset)) {
                 transactionBuilder.addOperation(Operation.changeTrust({
@@ -142,7 +145,18 @@ const generateCleanCBTransactionForAccountOnNetwork = (
 
 export default function ClaimBalances() {
     const {accountInformation, balancesClaiming, selectedBalances, setBalancesClaiming, setAccountInformation} = useApplicationState();
+    const [estimatedProceedings, setEstimatedProceedings] = useState(new BigNumber(0));
     const {getSelectedNetwork, horizonUrl} = StellarHelpers();
+
+    useEffect(() => {
+        getEstimatedProceedings(selectedBalances, horizonUrl().href)
+            .then(balances => balances
+                .map(balance => new BigNumber(balance.minProceeds))
+                .reduce((p, c) => p.add(c), new BigNumber(0))
+            )
+            .then(proceedings => setEstimatedProceedings(proceedings))
+    // eslint-disable-next-line
+    }, [selectedBalances]);
 
     const cleanBalances = async () => {
         if (accountInformation.state !== AccountState.valid) return;
@@ -232,7 +246,7 @@ export default function ClaimBalances() {
                     icon={<ClearOutlined />}
                     onClick={() => cleanBalances()}
                 >
-                    Clean selected balances
+                        Clean selected balances {estimatedProceedings.isZero()?'':` (~${estimatedProceedings.toString()} XLM)`}
                 </Button>
             </Popover>
             </Col>

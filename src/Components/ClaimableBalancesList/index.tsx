@@ -62,7 +62,7 @@ interface LoadClaimableBalancesParams {
 
 const isValidClaimableBalance = (claimableBalance: ClaimableBalanceRecord) => {
     if (!claimableBalance.destination) return true;
-    const claimant = claimableBalance.destination;//claimants.find(c => c.destination === destination);
+    const claimant = claimableBalance.destination;
     if (claimant.predicate.not?.abs_before) {
         const notBefore = Date.parse(claimant.predicate.not?.abs_before);
         if (notBefore >= Date.now()) return false;
