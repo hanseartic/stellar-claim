@@ -168,10 +168,8 @@ export default function ClaimBalances() {
             .then(submitTransactionResponse => {
                 if (submitTransactionResponse) {
                     const tr = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr, 'base64');
-                    const pathPayments = tr.result().results()
-                        .filter(r => r.value().switch().name === 'pathPaymentStrictSend');
-
-                    const proceedings = pathPayments
+                    const proceedings = tr.result().results()
+                        .filter(r => r.value().switch().name === 'pathPaymentStrictSend')
                         .map(pp => pp.tr().pathPaymentStrictSendResult().value())
                         .filter((result): result is xdr.PathPaymentStrictSendResultSuccess => true)
                         .map(result => result.last().amount().toString())
