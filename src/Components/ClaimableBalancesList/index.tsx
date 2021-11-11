@@ -148,7 +148,12 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
             return filteredRecords;
         });
 }
-const dontShowBalancesReasons = new Set([AccountState.notFound, AccountState.invalid, undefined]);
+const dontShowBalancesReasons = new Set([
+    AccountState.notSet,
+    AccountState.notFound,
+    AccountState.invalid,
+    undefined,
+]);
 export default function ClaimableBalancesOverview() {
     const {horizonUrl} = StellarHelpers();
 
