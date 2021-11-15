@@ -100,6 +100,9 @@ const generateCleanCBTransactionForAccountOnNetwork = (
 ) => {
     const missingTrustLineCodes = getMissingBalanceLines(account.balances, selectedBalances.map(b => b.asset));
     const transactionBuilder = new TransactionBuilder(account, {fee: BASE_FEE, networkPassphrase: networkPassphrase});
+    const dustbin = account.data_attr['app.lumens_space.dustbin.account']
+        ?Buffer.from(account.data_attr['app.lumens_space.dustbin.account'], 'base64').toString('binary')
+        :undefined;
     return getEstimatedProceedings(selectedBalances, serverUrl)
         .then(balances => { balances.forEach(balance => {
             const currentAsset = getStellarAsset(balance.asset);
@@ -121,7 +124,7 @@ const generateCleanCBTransactionForAccountOnNetwork = (
                 transactionBuilder.addOperation(Operation.pathPaymentStrictSend({
                     sendAsset: currentAsset,
                     destAsset: Asset.native(),
-                    destination: account.accountId(),
+                    destination: dustbin??account.accountId(),
                     sendAmount: balance.amount,
                     destMin: balance.minProceeds,
                     path: balance.path,
