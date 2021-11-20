@@ -4,24 +4,29 @@ import {ColumnsType, TableRowSelection} from 'antd/lib/table/interface';
 import useApplicationState from '../../useApplicationState';
 import StellarHelpers, {cachedFetch, getStellarAsset} from '../../StellarHelpers';
 import AssetPresenter from '../AssetPresenter';
-import {Horizon, ServerApi} from 'stellar-sdk';
+import { ServerApi, xdr} from 'stellar-sdk';
 import {TransactionCallBuilder} from "stellar-sdk/lib/transaction_call_builder";
 import {AccountState} from '../AccountSelector';
 import {useParams} from 'react-router-dom';
 import StellarAddressLink from '../StellarAddressLink';
 import URI from 'urijs';
 import BigNumber from "bignumber.js";
+import {predicateFromHorizonResponse, getPredicateInformation, PredicateInformation} from "stellar-resolve-claimant-predicates";
+
+interface Claimant {
+    destination: string,
+    predicate: xdr.ClaimPredicate,
+}
 
 interface ClaimableBalanceRecord extends ServerApi.ClaimableBalanceRecord {
     transaction_memo?: string,
-    valid_to?: Date,
-    valid_from?: Date,
-    destination?: Horizon.Claimant|null,
+    claimant?: Claimant|null,
+    information?: PredicateInformation,
 }
 
 const loadBalancesMax = 300;
 
-const tableColumns = (): ColumnsType<ClaimableBalanceRecord> => [
+const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
     {
         title: 'Amount',
         dataIndex: 'amount',
@@ -36,33 +41,37 @@ const tableColumns = (): ColumnsType<ClaimableBalanceRecord> => [
 
     },
     {
-        responsive: ['xxl', 'xl', 'lg', 'md', ],
         title: 'Sender',
         dataIndex: 'sponsor',
         key: 'sponsor',
         render: (address: string) => <StellarAddressLink id={address} length={9} />,
+        responsive: ['xxl', 'xl', 'lg', 'md', ],
     },
     {
-        responsive: ['xxl', 'xl', 'lg', 'md', 'sm'],
         title: 'Memo',
         dataIndex: 'transaction_memo',
+        responsive: ['xxl', 'xl', 'lg', 'md', 'sm'],
     },
     {
-        responsive: ['xxl', 'xl'],
         title: 'Claimable after',
-        dataIndex: 'valid_from',
-        render: (validFrom: Date|undefined) => validFrom
-            ? validFrom.toLocaleString()
+        key: 'valid_from',
+        dataIndex: ['information', 'validFromDate'],
+        render: (validFrom: number|undefined) => (validFrom
+            ? new Date(validFrom).toLocaleString()
             // should not happen but marks when protocol 15 went live
             : new Date(Date.parse('Mon Nov 23 2020 16:00:00 GMT+0000')).toUTCString()
+        ),
+        responsive: ['xxl', 'xl'],
     },
     {
-        responsive: ['xxl', 'xl', 'lg'],
         title: 'Expires',
-        dataIndex: 'valid_to',
-        render: (validTo: Date|undefined) => validTo
-            ? validTo.toLocaleString()
+        key: 'valid_to',
+        dataIndex: ['information', 'validToDate'],
+        render: (validTo: number|undefined) => (validTo
+            ? new Date(validTo).toLocaleString()
             : 'never'
+        ),
+        responsive: ['xxl', 'xl', 'lg'],
     }
 ];
 
@@ -74,27 +83,7 @@ interface LoadClaimableBalancesParams {
 }
 
 const isValidClaimableBalance = (claimableBalance: ClaimableBalanceRecord) => {
-    const activationDate = getClaimableBalanceActivationDate(claimableBalance);
-    if (activationDate && activationDate.getTime() >= Date.now()) {
-        //return false;
-    }
-    const expiryDate = getClaimableBalanceExpirationDate(claimableBalance);
-    if (expiryDate && expiryDate.getTime() <= Date.now()) {
-        return false;
-    }
-    return true;
-}
-
-const getClaimableBalanceExpirationDate = (claimableBalance: ClaimableBalanceRecord) => {
-    return claimableBalance.destination?.predicate.abs_before
-        ? new Date(Date.parse(claimableBalance.destination.predicate.abs_before))
-        : undefined;
-}
-
-const getClaimableBalanceActivationDate = (claimableBalance: ClaimableBalanceRecord) => {
-    return claimableBalance.destination?.predicate.not?.abs_before
-        ? new Date(Date.parse(claimableBalance.destination.predicate.not.abs_before))
-        : undefined;
+    return claimableBalance.information?.status !== 'expired';
 }
 
 const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: LoadClaimableBalancesParams) => {
@@ -106,7 +95,21 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
         .then(result => result.json())
         .then(async (json) => {
             const records: ClaimableBalanceRecord[] = json._embedded.records
-                .map((r:ServerApi.ClaimableBalanceRecord) => ({...r, destination: r.claimants.find(c => c.destination === searchParams.get('claimant'))}) as ClaimableBalanceRecord)
+                .map((r:ServerApi.ClaimableBalanceRecord) => {
+                    const claimant = r.claimants
+                        .find(c => c.destination === searchParams.get('claimant'));
+                    const information = claimant
+                        ?getPredicateInformation(predicateFromHorizonResponse(claimant.predicate), new Date())
+                        :undefined;
+                    return ({
+                        ...r,
+                        claimant: claimant?({
+                            destination: claimant.destination,
+                            predicate: information?.predicate,
+                        }):null,
+                        information: information,
+                    }) as ClaimableBalanceRecord;
+                })
                 .filter((claimableBalanceRecord: ClaimableBalanceRecord) =>
                     isValidClaimableBalance(claimableBalanceRecord)
                 )
@@ -127,9 +130,8 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                         .then(({records: transactionRecords}) => ({
                             ...record,
                             transaction_memo: transactionRecords[0]?.memo,
-                            valid_to: getClaimableBalanceExpirationDate(record),
                             // when there is no time-bound set use the ledger time
-                            valid_from: getClaimableBalanceActivationDate(record)??new Date(Date.parse(transactionRecords[0].created_at)),
+                            information: ({...record.information, validFromDate: record.information?.validFromDate??Date.parse(transactionRecords[0].created_at)}),
                         } as ClaimableBalanceRecord))
                 })));
 
@@ -250,7 +252,7 @@ export default function ClaimableBalancesOverview() {
                 || accountInformation.state === AccountState.notSet
                 || (!selectedBalanceIds.includes(record.id)
                     && selectedBalanceIds.length >= maxSelect)
-                || (record.valid_from?.getTime()??0) >= Date.now(),
+                || (record.information?.status !== 'claimable'),
         }),
     };
 
@@ -262,7 +264,7 @@ export default function ClaimableBalancesOverview() {
     // )
 
     return (<Table
-        columns={tableColumns()}
+        columns={tableColumns}
         dataSource={balances}
         loading={balancesLoading}
         pagination={pagination}
