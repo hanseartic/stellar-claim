@@ -36,16 +36,19 @@ const tableColumns = (): ColumnsType<ClaimableBalanceRecord> => [
 
     },
     {
+        responsive: ['xxl', 'xl', 'lg', 'md', ],
         title: 'Sender',
         dataIndex: 'sponsor',
         key: 'sponsor',
         render: (address: string) => <StellarAddressLink id={address} length={9} />,
     },
     {
+        responsive: ['xxl', 'xl', 'lg', 'md', 'sm'],
         title: 'Memo',
         dataIndex: 'transaction_memo',
     },
     {
+        responsive: ['xxl', 'xl'],
         title: 'Claimable after',
         dataIndex: 'valid_from',
         render: (validFrom: Date|undefined) => validFrom
@@ -54,6 +57,7 @@ const tableColumns = (): ColumnsType<ClaimableBalanceRecord> => [
             : new Date(Date.parse('Mon Nov 23 2020 16:00:00 GMT+0000')).toUTCString()
     },
     {
+        responsive: ['xxl', 'xl', 'lg'],
         title: 'Expires',
         dataIndex: 'valid_to',
         render: (validTo: Date|undefined) => validTo

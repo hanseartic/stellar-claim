@@ -74,7 +74,7 @@ const getEstimatedProceedings = (selectedBalances: ClaimableBalanceRecord[], hor
 const generateClaimTransactionForAccountOnNetwork = (selectedBalances: ClaimableBalanceRecord[], account: AccountResponse, networkPassphrase: string) => {
     const missingTrustLineCodes = getMissingBalanceLines(account.balances, selectedBalances.map(b => b.asset));
 
-    const transactionBuilder = new TransactionBuilder(account, {fee: BASE_FEE, networkPassphrase: networkPassphrase});
+    const transactionBuilder = new TransactionBuilder(account, {fee: new BigNumber(100).times(BASE_FEE).toString(), networkPassphrase: networkPassphrase});
 
     selectedBalances.forEach(balance => {
         const missingTrustLineIndex = missingTrustLineCodes.indexOf(balance.asset);
