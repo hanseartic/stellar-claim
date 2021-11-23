@@ -1,6 +1,13 @@
 import {BigNumber} from "bignumber.js";
-import {Badge, Button, Card, Col, Input, Popover, Row, Switch, Tooltip} from "antd";
-import {DeleteOutlined, FireOutlined, SendOutlined} from "@ant-design/icons";
+import {Badge, Button, Card, Col, DatePicker, Input, Popover, Row, Space, Switch, Tag, Tooltip} from "antd";
+import {
+    CloseCircleOutlined,
+    DeleteOutlined,
+    FireOutlined,
+    IdcardOutlined,
+    SendOutlined,
+    SyncOutlined
+} from "@ant-design/icons";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
@@ -10,6 +17,7 @@ import {
 import React, {useEffect, useState} from "react";
 import {
     AccountResponse,
+    Asset,
     BASE_FEE,
     Claimant,
     Horizon,
@@ -23,13 +31,15 @@ import {
 } from "stellar-sdk";
 import {OfferCallBuilder} from "stellar-sdk/lib/offer_call_builder";
 import URI from "urijs";
-import StellarHelpers, {getStellarAsset} from "../StellarHelpers";
+import StellarHelpers, {getStellarAsset, shortAddress} from "../StellarHelpers";
 import useApplicationState from "../useApplicationState";
 import {submitTransaction} from "./WalletHandling";
-
-type BalanceLineAsset = Horizon.BalanceLineAsset;
-type BalanceLineNative = Horizon.BalanceLineNative;
+import moment from "moment";
+import { RangeValue } from 'rc-picker/lib/interface';
 type BalanceLine = Horizon.BalanceLine;
+type BalanceLineAsset = Horizon.BalanceLineAsset;
+type BalanceLineLiquidityPool = Horizon.BalanceLineLiquidityPool;
+type BalanceLineNative = Horizon.BalanceLineNative;
 
 export type AccountBalanceRecord = {
     account: AccountResponse,
@@ -40,6 +50,47 @@ export type AccountBalanceRecord = {
     spendable: BigNumber,
 };
 
+const hasAccountTrustLine = (account: AccountResponse, assetString: string): boolean => {
+    const asset = getStellarAsset(assetString);
+    return !!(account?(account.balances
+        .filter((b: BalanceLine): b is (BalanceLineAsset|BalanceLineNative) =>
+            b.asset_type !== 'liquidity_pool_shares'
+        )
+        .find(b =>
+            (b.asset_type     !== 'native'
+            && b.asset_code   === asset.code
+            && b.asset_issuer === asset.issuer)
+            || b.asset_type === 'native'
+        )):false);
+}
+
+const filterLiquidityPoolShares = (balanceLines: BalanceLine[]): Exclude<BalanceLine, BalanceLineLiquidityPool>[] => balanceLines
+    .filter((b): b is Exclude<BalanceLine, BalanceLineLiquidityPool> => b.asset_type !== 'liquidity_pool_shares')
+
+const getBalanceLineFromAccount = (account: AccountResponse, asset: string): BalanceLineAsset|BalanceLineNative|undefined => {
+    if (asset === 'native')
+        return account.balances.find((b): b is BalanceLineNative => b.asset_type === 'native');
+    return filterLiquidityPoolShares(account.balances)
+        .filter((b): b is BalanceLineAsset => b.asset_type !== 'native')
+        .find((b) => asset === `${b.asset_code}:${b.asset_issuer}`);
+}
+const compareAccounts = (accountA: DestinationAccount, accountB: DestinationAccount): -1|0|1 => {
+    return accountA.id < accountB.id ? -1 : accountA.id === accountB.id ? 0 : 1
+}
+const isAssetIssuedByAccount = (asset: Asset, accountId: string): boolean => {
+    if (asset.isNative()) return false;
+    if (asset.getAssetType() === 'liquidity_pool_shares') return false;
+    return asset.getIssuer() === accountId;
+}
+
+interface DestinationAccount {
+    id: string,
+    state: 'loading'|'found'|'invalid',
+    role: 'unknown'|'self'|'trust'|'notrust'|'error'|'asset_issuer',
+    balance?: Exclude<BalanceLine, BalanceLineLiquidityPool>,
+    trusted?: boolean,
+}
+
 export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBalanceRecord}) {
     const {accountInformation, setAccountInformation, autoRemoveTrustlines, setAutoRemoveTrustlines} = useApplicationState();
     const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
@@ -47,10 +98,10 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [burnRemovePopoverVisible, setBurnRemovePopoverVisible] = useState(false);
     const [canBurn, setCanBurn] = useState(false);
     const [canRemoveTrust, setCanRemoveTrust] = useState(false);
-    const [destinationAccount, setDestinationAccount] = useState<AccountResponse>()
+    const [destinationAccounts, setDestinationAccounts] = useState<DestinationAccount[]>([]);
     const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
     const [destinationAccountId, setDestinationAccountId] = useState('')
-    const [destinationAccountInvalid, setDestinationAccountInvalid] = useState(false)
+    const [destinationAccountInvalid, setDestinationAccountsInvalid] = useState(false)
     const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [isBurn, setIsBurn] = useState(false);
     const [sendAmount, setSendAmount] = useState('')
@@ -59,7 +110,8 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [sendPopoverVisible, setSendPopoverVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [transactionMemo, setTransactionMemo] = useState('');
-    const [xdr, setXDR] = useState('');
+    const [XDRs, setXDRs] = useState<string[]>([]);
+    const [claimableRange, setClaimableRange] = useState<RangeValue<moment.Moment>>();
 
     const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>): Promise<BigNumber> => {
         if (!offersCollection.records.length) return new Promise((resolve) => resolve(new BigNumber(0)));
@@ -78,56 +130,95 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             );
     };
 
-    const saveXDR = () => {
+    const removeTag = (accountId: string) => {
+        setDestinationAccounts(accounts => accounts.filter(a => a.id !== accountId));
+    };
+    const getSpendable = (totalSpendable: BigNumber): BigNumber => {
+        const validAccounts = destinationAccounts.filter(a => a.state === 'found');
+        return totalSpendable
+            .dividedBy(validAccounts.length===0?1:validAccounts.length)
+            .round(7, BigNumber.ROUND_DOWN);
+    };
 
+    const saveXDR = () => {
         const asset = getStellarAsset(balanceRecord.asset);
-        const transactionBuilder = new TransactionBuilder(
-            accountInformation.account!,
-            {fee: BASE_FEE, networkPassphrase: Networks[getSelectedNetwork()]})
-            .addMemo(Memo.text(transactionMemo.length>0?transactionMemo:'via balances.lumens.space'));
-        if (sendAsClaimable) {
-            const claimants = [
-                new Claimant(
-                    destinationAccount!.accountId(),
-                    Claimant.predicateUnconditional()
-                )
-            ];
-            if (destinationAccount?.id !== accountInformation.account!.id) {
-                const claimBack = new Claimant(
-                    accountInformation.account!.id,
-                    Claimant.predicateNot(Claimant.predicateBeforeRelativeTime(new BigNumber(1)
-                        // .times(new BigNumber(60)) // a minute
-                        // .times(new BigNumber(60)) // an hour
-                        // .times(new BigNumber(24)) // a day
-                        // .times(new BigNumber(7))  // a week
-                        .toString())));
-                claimants.push(claimBack);
+        let sendTotal = new BigNumber(0);
+        let validDestinations = destinationAccounts.filter(a => a.state === 'found');
+        const xdrs = [];
+        while (validDestinations.length > 0) {
+            const transactionBuilder = new TransactionBuilder(
+                accountInformation.account!,
+                {fee: new BigNumber(BASE_FEE).times(100).toString(), networkPassphrase: Networks[getSelectedNetwork()]})
+                .addMemo(Memo.text(transactionMemo.length > 0 ? transactionMemo : 'via balances.lumens.space'));
+            let opsCount = 1;
+            // eslint-disable-next-line
+            validDestinations.every(destinationAccount => {
+                if (balanceRecord.spendable.lessThan(sendTotal.plus(sendAmount))) {
+                    return false;
+                }
+                // max 99 ops to allow for potential remove trustline op
+                if (opsCount > 100) return false;
+                sendTotal = sendTotal.plus(sendAmount);
+
+                if (sendAsClaimable) {
+                    const claimValidFrom = claimableRange?.[0]?.unix();
+                    const claimValidTo = claimableRange?.[1]?.unix();
+                    const claimants = [
+                        new Claimant(
+                            destinationAccount.id,
+                            (!!claimValidFrom || !!claimValidFrom) ? Claimant.predicateAnd(
+                                claimValidFrom
+                                    ? Claimant.predicateNot(Claimant.predicateBeforeAbsoluteTime(claimValidFrom.toString()))
+                                    : Claimant.predicateUnconditional(),
+                                claimValidTo
+                                    ? Claimant.predicateBeforeAbsoluteTime(claimValidTo.toString())
+                                    : Claimant.predicateUnconditional()
+                                )
+                                : Claimant.predicateUnconditional()
+                        )
+                    ];
+                    if (destinationAccount.id !== accountInformation.account!.id) {
+                        const claimBack = new Claimant(
+                            accountInformation.account!.id,
+                            claimValidTo
+                                ? Claimant.predicateNot(Claimant.predicateBeforeAbsoluteTime(claimValidTo.toString()))
+                                : Claimant.predicateUnconditional()
+                            );
+                        claimants.push(claimBack);
+                    }
+                    transactionBuilder
+                        .addOperation(Operation.createClaimableBalance({
+                            amount: sendAmount,
+                            asset: asset,
+                            claimants: claimants,
+                        }))
+                } else {
+                    transactionBuilder.addOperation(Operation.payment({
+                        destination: destinationAccount.id,
+                        amount: sendAmount,
+                        asset: asset,
+                    }));
+                }
+                return !!opsCount++;
+            });
+            sendTotal = sendTotal.plus(new BigNumber(sendAmount).times(opsCount));
+            validDestinations = validDestinations.slice(opsCount-1);
+            if (autoRemoveTrustlines) {
+                if (balanceRecord.balance.eq(sendTotal)) {
+                    transactionBuilder.addOperation(Operation.changeTrust({
+                        asset: asset,
+                        limit: '0',
+                    }))
+                }
             }
-            transactionBuilder
-            .addOperation(Operation.createClaimableBalance({
-                amount: sendAmount,
-                asset: asset,
-                claimants: claimants,
-            }))
-        } else {
-            transactionBuilder.addOperation(Operation.payment({
-                destination: destinationAccount!.accountId(),
-                amount: sendAmount,
-                asset: asset,
-            }));
+            const transactionXDR = transactionBuilder
+                .setTimeout(0)
+                .build().toXDR();
+
+            console.log(transactionXDR);
+            xdrs.push(transactionXDR);
         }
-        if (autoRemoveTrustlines) {
-            if (balanceRecord.balance.eq(sendAmount)) {
-                transactionBuilder.addOperation(Operation.changeTrust({
-                    asset: asset,
-                    limit: '0',
-                }))
-            }
-        }
-        const transactionXDR = transactionBuilder
-            .setTimeout(0)
-            .build().toXDR();
-        setXDR(transactionXDR);
+        setXDRs(xdrs);
     };
 
     const CBSwitchOverlay = <>
@@ -226,7 +317,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         <Button
             loading={submitting}
             onClick={() => {
-                tb().then(transactionBuilder => setXDR(transactionBuilder.build().toXDR()));
+                tb().then(transactionBuilder => setXDRs([transactionBuilder.build().toXDR()]));
             }}
             icon={isBurn?<FireOutlined />:<DeleteOutlined />}
         >{sendAmount === '0'?'remove':'burn'}</Button>
@@ -235,15 +326,19 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         </Card>
         )
     };
+
+    const onDateSelected = (claimableRange: RangeValue<moment.Moment>) => {
+        setClaimableRange(claimableRange);
+    };
     const sendPopoverContent = <>
         <Row>
             <Input
                 allowClear
                 onChange={e => setSendAmount(e.target.value)}
-                placeholder={balanceRecord.spendable.toFormat()}
+                placeholder={getSpendable(balanceRecord.spendable).toFormat(7)}
                 prefix={<Tooltip overlay='Enter the amount to send'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
                 suffix={<Tooltip overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
-                    setSendAmount(balanceRecord.spendable.toFormat())
+                    setSendAmount(getSpendable(balanceRecord.spendable).toFormat(7))
                 } /></Tooltip>}
                 value={sendAmount}
                 style={{borderColor:sendAmountInvalid?'red':undefined}}
@@ -253,12 +348,61 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             <Input
                 allowClear
                 onChange={e => setDestinationAccountId(e.target.value)}
-                placeholder={Keypair.random().publicKey()}
-                prefix={<Tooltip overlay='Enter the recipient address'><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
+                onBlur={e => setDestinationAccountId(e.target.value)}
+                placeholder={`${shortAddress(Keypair.random().publicKey(), 16)} [${shortAddress(Keypair.random().publicKey(), 16)}] […]`}
+                prefix={<Tooltip overlay={<>Enter the recipient address(es).<br/><br/>Multiple addresses can be entered one-by-one or separated by a space.</>}><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
                 /*suffix={<Tooltip overlay='Click here to burn the asset'><FontAwesomeIcon icon={faDumpsterFire} onClick={() => { setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer()); }}/></Tooltip>}*/
                 value={destinationAccountId}
                 style={{borderColor:destinationAccountInvalid?'red':undefined, width: '42em'}}
             />
+        </Row>
+        <Row>
+            {destinationAccounts.map(account => {
+                let tagColor = 'default';
+                let tagIcon = <></>;
+                let hint = '';
+                switch(account.role) {
+                    case 'unknown':
+                        tagIcon = <SyncOutlined spin />;
+                        break;
+                    case 'self':
+                        tagIcon = <IdcardOutlined />;
+                        hint = " – it's you!";
+                        break;
+                    case 'trust':
+                        tagColor = 'cyan';
+                        tagIcon = <FontAwesomeIcon icon={faLink} style={{marginRight: '7px'}} />;
+                        hint = " – trustline established";
+                        break;
+                    case 'notrust':
+                        tagColor = 'success';
+                        tagIcon = <FontAwesomeIcon icon={faUnlink} style={{marginRight: '7px'}} />;
+                        hint = ' – no trustline'
+                        break;
+                    case "error":
+                        tagColor = 'error';
+                        tagIcon = <CloseCircleOutlined />;
+                        hint = " – there was an error with this account; no funds will be sent"
+                        break;
+                    case 'asset_issuer':
+                        tagColor = 'warning';
+                        tagIcon = <FireOutlined />;
+                        hint = ' – sending to this account will burn the selected amount of funds!'
+                        break;
+                }
+
+                return (<Tag
+                    icon={tagIcon}
+                    color={tagColor}
+                    key={account.id}
+                    title={account.id}
+                    closable={true}
+                    onClose={(e: React.MouseEvent<HTMLElement, MouseEvent>) => { removeTag(account.id);}}>
+                <span><Tooltip key={account.id} title={account.id + hint}>
+                    <code>{shortAddress(account.id, 8)}</code>
+                </Tooltip></span>
+                </Tag>);
+            })}
         </Row>
         {!isBurn ? <></> : <Row>
         Sending to the issuer account will burn the selected amount of this asset!
@@ -279,7 +423,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     overlay={CBSwitchOverlay}>
                     <Switch
                         defaultChecked={sendAsClaimable}
-                        disabled={!destinationCanReceivePayment && !isBurn}
+                        disabled={!destinationCanReceivePayment}
                         onChange={setSendAsClaimable}
                         checked={sendAsClaimable}
                         checkedChildren={<FontAwesomeIcon icon={faHandHolding}/>}
@@ -296,6 +440,20 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 </a>
             </Col>
         </Row>
+        {sendAsClaimable
+            ?<Row>
+                <Space direction="vertical" size={12}>
+                    <DatePicker.RangePicker
+                        size={'small'}
+                        disabledDate={(current) => current && current < moment().startOf('day')}
+                        showTime={{ format: 'HH:mm' }}
+                        format="YYYY-MM-DD HH:mm"
+                        onOk={onDateSelected}
+                        onChange={onDateSelected}
+                    />
+                </Space>
+            </Row>
+            :<></>}
         {getStellarAsset(balanceRecord.asset).isNative() ? <></> : <Row gutter={16}>
             <Col>
                 <Tooltip
@@ -314,13 +472,17 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         <Row style={{paddingTop: 5, paddingBottom: 5}}>
         <Button
             icon={<FontAwesomeIcon style={{marginRight: '0.3em'}} icon={isBurn?faDumpsterFire:faSatelliteDish} />}
-            disabled={destinationAccountInvalid||destinationAccountId.length===0||sendAmountInvalid||!sendAmount}
+            disabled={
+                destinationAccounts.filter(a => a.state === 'found').length===0
+                ||destinationAccounts.filter(a => a.state === 'loading').length>0
+                ||sendAmountInvalid
+                ||!sendAmount
+            }
             loading={submitting}
             onClick={() => saveXDR()}
         >{isBurn?'Burn':'Transfer'} funds</Button>
         </Row>
     </>;
-
 
     const handleSendPopoverVisibleChange = (visible: any) => {
         if (balanceRecord.spendable.isZero()) return;
@@ -330,51 +492,45 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         setBurnRemovePopoverVisible(visible);
     }
     useEffect(() => {
-        if (destinationAccount) {
+        const validAccounts = destinationAccounts.filter(a => a.state === 'found');
+        if (validAccounts.filter(a => a.state === 'found').length > 0) {
             const asset = getStellarAsset(balanceRecord.asset);
-            const sendSelf = destinationAccount.accountId() === accountInformation.account?.accountId();
-            const shouldBurn = destinationAccount.id === asset.getIssuer();
+            const sendSelf = validAccounts.some(a => a.id === accountInformation.account?.accountId());
+            const shouldBurn = validAccounts.every(a => a.id === asset.getIssuer());
             const canReceivePayment = !sendSelf && (asset.isNative()
-                || !!destinationAccount.balances
-                    .filter((b: BalanceLine): b is (BalanceLineAsset|BalanceLineNative) =>
-                        b.asset_type !== 'liquidity_pool_shares'
-                    )
-                    .find(b =>
-                        b.asset_type !== 'native'
-                        && b.asset_code === asset.code
-                        && b.asset_issuer === asset.issuer
-                    )
-                || shouldBurn
+                    || validAccounts.every(a => a.trusted)
+                    || shouldBurn
             );
-            setIsBurn(shouldBurn);
             if (!canReceivePayment) {
                 setSendAsClaimable(true);
             }
-            if (shouldBurn) {
+            if (shouldBurn && canReceivePayment) {
                 setSendAsClaimable(false);
             }
+            setIsBurn(shouldBurn);
             setDestinationCanReceivePayment(canReceivePayment);
         } else {
             setIsBurn(false);
             setDestinationCanReceivePayment(false);
             setSendAsClaimable(true);
         }
-    }, [destinationAccount, accountInformation.account, balanceRecord.asset]);
+    }, [destinationAccounts, accountInformation.account, balanceRecord.asset]);
     useEffect(() => {
         setHorizonUrl(fnHorizonUrl().href);
     }, [fnHorizonUrl]);
     useEffect(() => {
-        if (xdr) {
+        if (XDRs.length > 0) {
             setSubmitting(true);
-            submitTransaction(xdr, accountInformation.account!, horizonUrl, getSelectedNetwork())
+            const XDR = XDRs[0];
+            submitTransaction(XDR, accountInformation.account!, horizonUrl, getSelectedNetwork())
                 .then(() => {
                     return new Server(horizonUrl)
                         .loadAccount(accountInformation.account!.id)
                         .then(account => setAccountInformation({account: account}));
                 })
-                .then(() => setXDR(''))
                 .then(() => {
-                    setDestinationAccount(undefined);
+                    setXDRs(xdrs => xdrs.slice(1));
+                    setDestinationAccounts([]);
                     setDestinationAccountId('');
                     setSendAmount('');
                     setSubmitting(false);
@@ -383,27 +539,64 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 });
         }
         // eslint-disable-next-line
-    }, [xdr]);
+    }, [XDRs]);
     useEffect(() => {
         if (destinationAccountId.length > 0) {
-            new Server(horizonUrl).loadAccount(destinationAccountId)
-                .then(setDestinationAccount)
-                .then(() => setDestinationAccountInvalid(false))
+            const accountIds = destinationAccountId.split(/[-,;.\s]/);
+            accountIds.forEach(destination => {
+                setDestinationAccounts(accounts => [
+                    ...accounts.filter(a => a.id !== destination),
+                    {id: destination, state: 'loading', role: 'unknown'} as DestinationAccount
+                ].sort(compareAccounts));
+            new Server(horizonUrl).loadAccount(destination)
+                .then(account => setDestinationAccounts(accounts => [
+                    ...accounts.filter(a => a.id !== destination),
+                    {
+                        id: destination,
+                        state: 'found',
+                        role: account.id === accountInformation.account?.id
+                            ? 'self'
+                            : isAssetIssuedByAccount(getStellarAsset(balanceRecord.asset), account.id)
+                                ? 'asset_issuer'
+                                : hasAccountTrustLine(account, balanceRecord.asset)
+                                    ? 'trust'
+                                    : 'notrust',
+                        trusted: hasAccountTrustLine(account, balanceRecord.asset),
+                        balance: getBalanceLineFromAccount(account, balanceRecord.asset),
+                    } as DestinationAccount
+                ].sort(compareAccounts)))
                 .catch(() => {
-                    setDestinationAccount(undefined);
-                    setDestinationAccountInvalid(true);
+                    setDestinationAccounts(accounts => [
+                        ...accounts.filter(a => a.id !== destination),
+                        {
+                            id: destination,
+                            state: 'invalid',
+                            role: 'error',
+                        } as DestinationAccount
+                    ]);
                 });
+            })
         } else {
-            setDestinationAccount(undefined);
-            setDestinationAccountInvalid(false);
+            setDestinationAccountsInvalid(false);
         }
-    }, [destinationAccountId, horizonUrl]);
+    }, [destinationAccountId, horizonUrl, balanceRecord.asset, accountInformation.account]);
+    useEffect(() => {
+        setDestinationAccountId(dest => dest !== '' ? '' : dest);
+        if (destinationAccounts.length > 0) {
+            if (destinationAccounts.some(a => a.state === 'found')) {
+                setDestinationAccountsInvalid(false);
+            } else {
+                setDestinationAccountsInvalid(true);
+            }
+        }
+    }, [destinationAccounts]);
     useEffect(() => {
         setSendAmountInvalid(false);
         if (sendAmount !== undefined && sendAmount !== '') {
             try {
                 const send = new BigNumber(sendAmount.replace(',',''));
-                if (send.greaterThan(balanceRecord.spendable) || send.lessThan('0.0000001')) {
+                const sendTotal = send.times(destinationAccounts.filter(a => a.state === 'found').length);
+                if (sendTotal.greaterThan(balanceRecord.spendable) || send.lessThan('0.0000001')) {
                     setSendAmountInvalid(true);
                 }
                 if (send.decimalPlaces() > 7) {
@@ -413,7 +606,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 setSendAmountInvalid(true);
             }
         }
-    }, [balanceRecord.spendable, sendAmount]);
+    }, [balanceRecord.spendable, sendAmount, destinationAccounts]);
     useEffect(() => {
         setIsBurn(isBurn&&!sendAmountInvalid)
     }, [isBurn, sendAmountInvalid])

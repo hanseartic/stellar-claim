@@ -4,7 +4,7 @@ import {ColumnsType, TableRowSelection} from 'antd/lib/table/interface';
 import useApplicationState from '../../useApplicationState';
 import StellarHelpers, {cachedFetch, getStellarAsset} from '../../StellarHelpers';
 import AssetPresenter from '../AssetPresenter';
-import { ServerApi, xdr} from 'stellar-sdk';
+import {ServerApi, xdr} from 'stellar-sdk';
 import {TransactionCallBuilder} from "stellar-sdk/lib/transaction_call_builder";
 import {AccountState} from '../AccountSelector';
 import {useParams} from 'react-router-dom';
