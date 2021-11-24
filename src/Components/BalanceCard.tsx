@@ -60,7 +60,7 @@ const hasAccountTrustLine = (account: AccountResponse, assetString: string): boo
             (b.asset_type     !== 'native'
             && b.asset_code   === asset.code
             && b.asset_issuer === asset.issuer)
-            || b.asset_type === 'native'
+            || b.asset_type === asset.getAssetType()
         )):false);
 }
 

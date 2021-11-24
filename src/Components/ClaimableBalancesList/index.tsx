@@ -55,9 +55,9 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
     {
         title: 'Claimable after',
         key: 'valid_from',
-        dataIndex: ['information', 'validFromDate'],
+        dataIndex: ['information', 'validFrom'],
         render: (validFrom: number|undefined) => (validFrom
-            ? new Date(validFrom).toLocaleString()
+            ? new Date(validFrom*1000).toLocaleString()
             // should not happen but marks when protocol 15 went live
             : new Date(Date.parse('Mon Nov 23 2020 16:00:00 GMT+0000')).toUTCString()
         ),
@@ -66,9 +66,9 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
     {
         title: 'Expires',
         key: 'valid_to',
-        dataIndex: ['information', 'validToDate'],
+        dataIndex: ['information', 'validTo'],
         render: (validTo: number|undefined) => (validTo
-            ? new Date(validTo).toLocaleString()
+            ? new Date(validTo*1000).toLocaleString()
             : 'never'
         ),
         responsive: ['xxl', 'xl', 'lg'],
@@ -110,10 +110,7 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                         information: information,
                     }) as ClaimableBalanceRecord;
                 })
-                .filter((claimableBalanceRecord: ClaimableBalanceRecord) =>
-                    isValidClaimableBalance(claimableBalanceRecord)
-                )
-            ;
+                .filter(isValidClaimableBalance);
             // only show records, that have a funded issuer account
             const filteredRecords = await Promise
                 .all(records.map(r => {
@@ -131,7 +128,11 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                             ...record,
                             transaction_memo: transactionRecords[0]?.memo,
                             // when there is no time-bound set use the ledger time
-                            information: ({...record.information, validFromDate: record.information?.validFromDate??Date.parse(transactionRecords[0].created_at)}),
+                            information: ({
+                                ...record.information,
+                                validFrom: record.information?.validFrom
+                                    ??new BigNumber(Date.parse(transactionRecords[0].created_at)).div(1000).round(0).toNumber()
+                            }),
                         } as ClaimableBalanceRecord))
                 })));
 
