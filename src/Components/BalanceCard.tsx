@@ -201,7 +201,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 }
                 return !!opsCount++;
             });
-            sendTotal = sendTotal.plus(new BigNumber(sendAmount).times(opsCount));
             validDestinations = validDestinations.slice(opsCount-1);
             if (autoRemoveTrustlines) {
                 if (balanceRecord.balance.eq(sendTotal)) {
