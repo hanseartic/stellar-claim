@@ -240,7 +240,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             if (isBurn) {
                 transactionBuilder.addOperation(Operation.payment({
                     asset: asset,
-                    destination: destinationAccountId,
+                    destination: destinationAccounts.find(a => a.role === 'asset_issuer')?.id??'',
                     amount: sendAmount,
                 }));
             } else if (!balanceRecord.buyingLiabilities.isZero()) {
@@ -662,7 +662,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 block
                 disabled={balanceRecord.spendable.isZero()}
                 icon={<SendOutlined />}
-                onClick={() => {setSendAmount(''); setDestinationAccountId('');}}
+                onClick={() => {setSendAmount(''); setDestinationAccounts([]);}}
                 >Send
             </Button>
         </Popover></Col>
