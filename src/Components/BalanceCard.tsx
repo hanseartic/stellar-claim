@@ -330,7 +330,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         setClaimableRange(claimableRange);
     };
     const sendPopoverContent = <>
-        <Row>
+        <Space direction={"vertical"} style={{width: 625}} >
             <Input
                 allowClear
                 onChange={e => setSendAmount(e.target.value)}
@@ -342,8 +342,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 value={sendAmount}
                 style={{borderColor:sendAmountInvalid?'red':undefined}}
             />
-        </Row>
-        <Row>
+
             <Input
                 allowClear
                 onChange={e => setDestinationAccountId(e.target.value)}
@@ -352,11 +351,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 prefix={<Tooltip overlay={<>Enter the recipient address(es).<br/><br/>Multiple addresses can be entered one-by-one or separated by a space.</>}><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
                 /*suffix={<Tooltip overlay='Click here to burn the asset'><FontAwesomeIcon icon={faDumpsterFire} onClick={() => { setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer()); }}/></Tooltip>}*/
                 value={destinationAccountId}
-                style={{borderColor:destinationAccountInvalid?'red':undefined, width: '42em'}}
             />
-        </Row>
-        <Row>
-            {destinationAccounts.map(account => {
+
+            <Space size={[0,3]} align={"center"} wrap={true}>{destinationAccounts.map(account => {
                 let tagColor = 'default';
                 let tagIcon = <></>;
                 let hint = '';
@@ -397,16 +394,16 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     title={account.id}
                     closable={true}
                     onClose={(e: React.MouseEvent<HTMLElement, MouseEvent>) => { removeTag(account.id);}}>
-                <span><Tooltip key={account.id} title={account.id + hint}>
-                    <code>{shortAddress(account.id, 8)}</code>
-                </Tooltip></span>
+                    <span><Tooltip key={account.id} title={account.id + hint}>
+                        <code>{shortAddress(account.id, 8)}</code>
+                    </Tooltip></span>
                 </Tag>);
-            })}
-        </Row>
-        {!isBurn ? <></> : <Row>
-        Sending to the issuer account will burn the selected amount of this asset!
-        </Row>}
-        <Row>
+            })}</Space>
+
+            {!isBurn ? <></> : <Space>
+            Sending to the issuer account will burn the selected amount of this asset!
+            </Space>}
+
             <Input
                 allowClear
                 maxLength={28}
@@ -415,11 +412,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 placeholder='via balances.lumens.space'
                 value={transactionMemo}
             />
-        </Row>
-        <Row style={{paddingTop: 5, paddingBottom: 5}}>
-            <Col>
-                <Tooltip
-                    overlay={CBSwitchOverlay}>
+
+            <Space direction={"horizontal"}>
+                <Tooltip overlay={CBSwitchOverlay}>
                     <Switch
                         defaultChecked={sendAsClaimable}
                         disabled={!destinationCanReceivePayment}
@@ -429,32 +424,22 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                         unCheckedChildren={<SendOutlined />}
                     />
                 </Tooltip>
-            </Col>
-            <Col>&nbsp;</Col>
-            <Col>
+                <span>
                 Send as <a href='https://developers.stellar.org/docs/glossary/claimable-balance/'
                    target="_blank"
-                   rel="noreferrer">
-                    claimable balance
-                </a>
-            </Col>
-        </Row>
-        {sendAsClaimable
-            ?<Row>
-                <Space direction="vertical" size={12}>
-                    <DatePicker.RangePicker
-                        size={'small'}
-                        disabledDate={(current) => current && current < moment().startOf('day')}
-                        showTime={{ format: 'HH:mm' }}
-                        format="YYYY-MM-DD HH:mm"
-                        onOk={onDateSelected}
-                        onChange={onDateSelected}
-                    />
-                </Space>
-            </Row>
-            :<></>}
-        {getStellarAsset(balanceRecord.asset).isNative() ? <></> : <Row gutter={16}>
-            <Col>
+                   rel="noreferrer">claimable balance</a>
+                </span>
+                {sendAsClaimable?<DatePicker.RangePicker
+                    size={'small'}
+                    disabledDate={(current) => current && current < moment().startOf('day')}
+                    showTime={{ format: 'HH:mm' }}
+                    format="YYYY-MM-DD HH:mm"
+                    onOk={onDateSelected}
+                    onChange={onDateSelected}
+                />:null}
+            </Space>
+
+            {getStellarAsset(balanceRecord.asset).isNative() ? <></> : <Space direction={"horizontal"}>
                 <Tooltip
                     overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
                     <Switch
@@ -465,22 +450,20 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                         unCheckedChildren={<FontAwesomeIcon icon={faLink}/>}
                     />
                 </Tooltip>
-            </Col>
-            <Col>{autoRemoveTrustlines?'Remove':'Keep'} the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> when sending all funds</Col>
-        </Row>}
-        <Row style={{paddingTop: 5, paddingBottom: 5}}>
-        <Button
-            icon={<FontAwesomeIcon style={{marginRight: '0.3em'}} icon={isBurn?faDumpsterFire:faSatelliteDish} />}
-            disabled={
-                destinationAccounts.filter(a => a.state === 'found').length===0
-                ||destinationAccounts.filter(a => a.state === 'loading').length>0
-                ||sendAmountInvalid
-                ||!sendAmount
-            }
-            loading={submitting}
-            onClick={() => saveXDR()}
-        >{isBurn?'Burn':'Transfer'} funds</Button>
-        </Row>
+                <span>{autoRemoveTrustlines?'Remove':'Keep'} the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> when sending all funds</span>
+            </Space>}
+            <Button
+                icon={<FontAwesomeIcon style={{marginRight: '0.3em'}} icon={isBurn?faDumpsterFire:faSatelliteDish} />}
+                disabled={
+                    destinationAccounts.filter(a => a.state === 'found').length===0
+                    ||destinationAccounts.filter(a => a.state === 'loading').length>0
+                    ||sendAmountInvalid
+                    ||!sendAmount
+                }
+                loading={submitting}
+                onClick={() => saveXDR()}
+            >{isBurn?'Burn':'Transfer'} funds</Button>
+        </Space>
     </>;
 
     const handleSendPopoverVisibleChange = (visible: any) => {
