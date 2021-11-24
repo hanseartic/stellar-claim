@@ -101,7 +101,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [destinationAccounts, setDestinationAccounts] = useState<DestinationAccount[]>([]);
     const [destinationCanReceivePayment, setDestinationCanReceivePayment] = useState(false);
     const [destinationAccountId, setDestinationAccountId] = useState('')
-    const [destinationAccountInvalid, setDestinationAccountsInvalid] = useState(false)
     const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [isBurn, setIsBurn] = useState(false);
     const [sendAmount, setSendAmount] = useState('')
@@ -558,20 +557,8 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     ]);
                 });
             })
-        } else {
-            setDestinationAccountsInvalid(false);
         }
     }, [destinationAccountId, horizonUrl, balanceRecord.asset, accountInformation.account]);
-    useEffect(() => {
-        setDestinationAccountId(dest => dest !== '' ? '' : dest);
-        if (destinationAccounts.length > 0) {
-            if (destinationAccounts.some(a => a.state === 'found')) {
-                setDestinationAccountsInvalid(false);
-            } else {
-                setDestinationAccountsInvalid(true);
-            }
-        }
-    }, [destinationAccounts]);
     useEffect(() => {
         setSendAmountInvalid(false);
         if (sendAmount !== undefined && sendAmount !== '') {
