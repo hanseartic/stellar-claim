@@ -326,7 +326,10 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     };
 
     const onDateSelected = (claimableRange: RangeValue<moment.Moment>) => {
-        setClaimableRange(claimableRange);
+        setClaimableRange(claimableRange
+            ?claimableRange.map((moment: moment.Moment|null) => moment?moment.seconds(0).milliseconds(0):null) as RangeValue<moment.Moment>
+            :null
+        );
     };
     const sendPopoverContent = <>
         <Space direction={"vertical"} style={{width: 625}} >
@@ -429,12 +432,15 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                    rel="noreferrer">claimable balance</a>
                 </span>
                 {sendAsClaimable?<DatePicker.RangePicker
+                    allowEmpty={[true, true]}
                     size={'small'}
                     disabledDate={(current) => current && current < moment().startOf('day')}
-                    showTime={{ format: 'HH:mm' }}
+                    showTime={{ format: 'YYYY-MM-DD HH:mm' }}
+                    placeholder={['claimable after', 'claimable before']}
                     format="YYYY-MM-DD HH:mm"
-                    onOk={onDateSelected}
-                    onChange={onDateSelected}
+                    onCalendarChange={onDateSelected}
+                    minuteStep={15}
+                    value={claimableRange}
                 />:null}
             </Space>
 
@@ -634,7 +640,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 block
                 disabled={balanceRecord.spendable.isZero()}
                 icon={<SendOutlined />}
-                onClick={() => {setSendAmount(''); setDestinationAccounts([]);}}
+                onClick={() => {setSendAmount(''); setDestinationAccounts([]); setClaimableRange(null)}}
                 >Send
             </Button>
         </Popover></Col>
