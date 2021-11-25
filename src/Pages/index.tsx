@@ -48,16 +48,21 @@ const QRCode = () => {
 }
 
 const components: Components = {
-    abbr: ({...props}) => {
+    abbr: (props) => {
+        const componentProps: typeof props & {"data-length"?:string} = {...props};
         const defaultResult = (<abbr {...{...props, node: undefined}}>{props.children}</abbr>);
-        if (props['data-length'] === undefined) return defaultResult;
+        if (componentProps["data-length"] === undefined) return defaultResult;
         if (props.children.length !== 1) return defaultResult;
         const child = props.children[0] as ReactElement;
         if (typeof child.type !== 'function') return defaultResult;
         const fnResult = (child.type as () => any)();
-        props.title = fnResult;
-        return <abbr {...{...props, node: undefined}}>{shortAddress(fnResult, parseInt(props['data-length'] as string))}</abbr>;},
-    object: ({...props}) => {return <object {...{...props, node:undefined}}>{process.env[props['data-env'] as string]??props.children}</object>;},
+        componentProps.title = fnResult;
+        return <abbr {...{...componentProps, node: undefined}}>{shortAddress(fnResult, parseInt(componentProps['data-length'] as string))}</abbr>;
+    },
+    object: (props) => {
+        const componentProps: typeof props & {"data-env"?:string} = {...props};
+        return <object {...{...props, node:undefined}}>{process.env[componentProps['data-env'] as string]??props.children}</object>;
+    },
     keygen: () => Keypair.random().publicKey(),
     embed: ({...props}) => { if (props.type === "img/donation-qr") {return QRCode();} return <embed {...props} />;},
 };
