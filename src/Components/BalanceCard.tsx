@@ -1,6 +1,5 @@
 import {BigNumber} from "bignumber.js";
 import {
-    AutoComplete,
     Badge,
     Button,
     Card,
@@ -12,7 +11,7 @@ import {
     Space,
     Switch,
     Tag,
-    Tooltip
+    Tooltip,
 } from "antd";
 import {
     CloseCircleOutlined,
@@ -20,13 +19,19 @@ import {
     FireOutlined,
     IdcardOutlined,
     SendOutlined,
-    SyncOutlined
+    SyncOutlined,
 } from "@ant-design/icons";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBalanceScaleLeft,
-    faCoins, faHandHolding,
-    faPeopleArrows, faSatelliteDish, faLink, faUnlink, faCommentDots, faDumpsterFire
+    faCoins,
+    faHandHolding,
+    faPeopleArrows,
+    faSatelliteDish,
+    faLink,
+    faUnlink,
+    faCommentDots,
+    faDumpsterFire,
 } from '@fortawesome/free-solid-svg-icons';
 import React, {useEffect, useState} from "react";
 import {
@@ -41,7 +46,7 @@ import {
     Operation,
     Server,
     ServerApi,
-    TransactionBuilder
+    TransactionBuilder,
 } from "stellar-sdk";
 import {OfferCallBuilder} from "stellar-sdk/lib/offer_call_builder";
 import URI from "urijs";
@@ -50,7 +55,9 @@ import useApplicationState from "../useApplicationState";
 import {submitTransaction} from "./WalletHandling";
 import moment from "moment";
 import { RangeValue } from 'rc-picker/lib/interface';
-import {BaseEmoji, EmojiData, emojiIndex} from 'emoji-mart';
+import EmojiInput, {emojiShortcodeMatch} from "./EmojiInput";
+import runes from 'runes';
+
 type BalanceLine = Horizon.BalanceLine;
 type BalanceLineAsset = Horizon.BalanceLineAsset;
 type BalanceLineLiquidityPool = Horizon.BalanceLineLiquidityPool;
@@ -107,7 +114,6 @@ interface DestinationAccount {
 }
 
 export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBalanceRecord}) {
-    const [acOptions, setAcOptions] = useState<({value: string, label?:string}|{label: string, options: {value: string}[]})[]>([]);
     const {accountInformation, setAccountInformation, autoRemoveTrustlines, setAutoRemoveTrustlines} = useApplicationState();
     const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
@@ -347,45 +353,29 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             :null
         );
     };
-    const shortcodeMatch = /:[_\-a-z0-9]*:?/;
+
     const stringByteSize = (string: string) => new Blob([string]).size;
-    const onMemoChanged = (memo: string) => {
-        const trimToBytes = (string: string, bytes: number): string => {
-            if (stringByteSize(string.replace(shortcodeMatch, '')) > bytes) {
-                return trimToBytes(string.substring(0, string.length-1), bytes);
+    const onMemoChanged = (memo: string|undefined) => {
+        const trimToBytes = (stringToTrim: string|undefined, maxBytes: number): string => {
+            if (!stringToTrim) return '';
+            if (stringByteSize(stringToTrim.replace(emojiShortcodeMatch, '')) > maxBytes) {
+                const runesString = runes(stringToTrim);
+                return trimToBytes(runes.substr(stringToTrim, 0, runesString.length-1), maxBytes);
             }
-            return string;
+            return stringToTrim;
         }
         setTransactionMemo(trimToBytes(memo, 28));
     }
-    const onMemoSearch = (searchText: string): void => {
-        const match = searchText.match(shortcodeMatch);
-        if (match?.length) {
-            const colonSearch = match[0].replaceAll(':', '');
-            const suggestions = emojiIndex.search(colonSearch)??[];
-            setAcOptions(suggestions.map((emojiData: EmojiData) => ({
-                label: (emojiData.colons??''),
-                options: [{value: (emojiData as BaseEmoji).native}],
-            })));
-        } else {
-            setAcOptions([]);
-        }
-    };
-    const onMemoSelect = (data: string) => {
-        const memoWithReplacedShortcode = transactionMemo.replace(shortcodeMatch, data);
-        setTransactionMemo(memoWithReplacedShortcode);
-        setAcOptions([]);
-    };
     const sendPopoverContent = <>
         <Space direction={"vertical"} style={{width: 625}} >
             <Input
                 allowClear
                 onChange={e => setSendAmount(e.target.value)}
                 placeholder={getSpendable(balanceRecord.spendable).toFormat(7)}
-                prefix={<Tooltip overlay='Enter the amount to send'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
-                suffix={<Tooltip overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
+                addonBefore={<Tooltip placement={"topLeft"} overlay='Enter the amount to send. The placeholder will show the spendable amount.'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
+                addonAfter={<Tooltip placement={"topRight"} overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
                     setSendAmount(getSpendable(balanceRecord.spendable).toFormat(7))
-                } /></Tooltip>}
+                } style={{cursor: "pointer"}}/></Tooltip>}
                 value={sendAmount}
                 style={{borderColor:sendAmountInvalid?'red':undefined}}
             />
@@ -395,8 +385,8 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 onChange={e => setDestinationAccountId(e.target.value)}
                 onBlur={e => setDestinationAccountId(e.target.value)}
                 placeholder={`${shortAddress(Keypair.random().publicKey(), 16)} [${shortAddress(Keypair.random().publicKey(), 16)}] […]`}
-                prefix={<Tooltip overlay={<>Enter the recipient address(es).<br/><br/>Multiple addresses can be entered one-by-one or separated by a space.</>}><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
-                /*suffix={<Tooltip overlay='Click here to burn the asset'><FontAwesomeIcon icon={faDumpsterFire} onClick={() => { setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer()); }}/></Tooltip>}*/
+                addonBefore={<Tooltip placement={"topLeft"}  overlay={<>Enter the recipient address(es).<br/><br/>Multiple addresses can be entered or pasted one-by-one or separated by a space.</>}><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
+                /*addonAfter={<Tooltip overlay='Click here to burn the asset'><FireOutlined onClick={() => { setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer()); }}/></Tooltip>}*/
                 value={destinationAccountId}
             />
 
@@ -451,25 +441,17 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             Sending to the issuer account will burn the selected amount of this asset!
             </Space>}
 
-            <AutoComplete
-                style={{ width: '100%' }}
+            <EmojiInput
                 onChange={onMemoChanged}
-                onSearch={onMemoSearch}
-                onSelect={onMemoSelect}
-                options={acOptions}
-                backfill={false}
                 value={transactionMemo}
-                dropdownMatchSelectWidth={100}>
-                <Input
-                    allowClear
-                    placeholder='via balances.lumens.space'
-                    prefix={<Tooltip overlay='Enter a memo'><FontAwesomeIcon icon={faCommentDots}/></Tooltip>}
-                    suffix={<span style={{color: "lightgray"}}>{`(${28-stringByteSize(transactionMemo)} bytes left)`}</span>}
+                allowClear
+                placeholder='via balances.lumens.space'
+                addonBefore={<Tooltip placement={"topLeft"} overlay={<>Enter a memo (Emojis supported 🎉 - just type a colon to open selection).</>}><FontAwesomeIcon icon={faCommentDots}/></Tooltip>}
+                addonAfter={<Tooltip placement={"topRight"} overlay={<>The memo text can have maximum of 28 Bytes.<br/>Emojis can take up two or even four Bytes.</>}><div style={{color: "lightgray", cursor: "default"}}>{`${28-stringByteSize(transactionMemo)} left`}</div></Tooltip>}
                 />
-            </AutoComplete>
 
             <Space direction={"horizontal"}>
-                <Tooltip overlay={CBSwitchOverlay}>
+                <Tooltip placement={"topLeft"} overlay={CBSwitchOverlay}>
                     <Switch
                         defaultChecked={sendAsClaimable}
                         disabled={!destinationCanReceivePayment}
@@ -499,6 +481,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
 
             {getStellarAsset(balanceRecord.asset).isNative() ? <></> : <Space direction={"horizontal"}>
                 <Tooltip
+                    placement={"topLeft"}
                     overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
                     <Switch
                         defaultChecked={autoRemoveTrustlines}
