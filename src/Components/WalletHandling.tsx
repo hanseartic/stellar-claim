@@ -62,7 +62,8 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
                 if (networkError.response.status === 504) {
                     notification.error({
                         message: 'Gateway timed out',
-                        description: networkError.response.data?.title??networkError.message,
+                        description: (networkError.response.data?.title??networkError.message)
+                            + 'This would mostly happen, when the fee offered was not high enough. Please try again.',
                     });
                     return;
                 }
