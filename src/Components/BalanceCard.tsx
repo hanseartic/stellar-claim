@@ -265,7 +265,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 transactionBuilder.addOperation(Operation.payment({
                     asset: asset,
                     destination: destinationAccounts.find(a => a.role === 'asset_issuer')?.id??'',
-                    amount: sendAmount.replace(",", ""),
+                    amount: sendAmount.replaceAll(",", ""),
                 }));
             } else if (!balanceRecord.buyingLiabilities.isZero()) {
                 // cancel the buy-offers for this asset
