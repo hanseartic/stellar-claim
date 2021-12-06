@@ -114,7 +114,10 @@ interface DestinationAccount {
 }
 
 export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBalanceRecord}) {
-    const {accountInformation, setAccountInformation, autoRemoveTrustlines, setAutoRemoveTrustlines} = useApplicationState();
+    const {
+        accountInformation, setAccountInformation,
+        autoRemoveTrustlines, setAutoRemoveTrustlines,
+    } = useApplicationState();
     const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
     const [burnRemovePopoverVisible, setBurnRemovePopoverVisible] = useState(false);
