@@ -131,8 +131,8 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [sendPopoverVisible, setSendPopoverVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [transactionMemo, setTransactionMemo] = useState('');
-    const [XDRs, setXDRs] = useState<string[]>([]);
     const [claimableRange, setClaimableRange] = useState<RangeValue<moment.Moment>>();
+    const [XDRs, setXDRs] = useState<string[]>([]);
 
     const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>): Promise<BigNumber> => {
         if (!offersCollection.records.length) return new Promise((resolve) => resolve(new BigNumber(0)));
@@ -166,6 +166,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         let sendTotal = new BigNumber(0);
         let validDestinations = destinationAccounts.filter(a => a.state === 'found');
         const xdrs = [];
+        const send = new BigNumber(sendAmount.replaceAll(',',''));
         while (validDestinations.length > 0) {
             const transactionBuilder = new TransactionBuilder(
                 accountInformation.account!,
@@ -174,12 +175,12 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             let opsCount = 1;
             // eslint-disable-next-line
             validDestinations.every(destinationAccount => {
-                if (balanceRecord.spendable.lessThan(sendTotal.plus(sendAmount))) {
+                if (balanceRecord.spendable.lessThan(sendTotal.plus(send))) {
                     return false;
                 }
                 // max 99 ops to allow for potential remove trustline op
                 if (opsCount > 100) return false;
-                sendTotal = sendTotal.plus(sendAmount);
+                sendTotal = sendTotal.plus(send);
 
                 if (sendAsClaimable) {
                     const claimValidFrom = claimableRange?.[0]?.unix();
@@ -209,14 +210,14 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     }
                     transactionBuilder
                         .addOperation(Operation.createClaimableBalance({
-                            amount: sendAmount,
+                            amount: send.toString(),
                             asset: asset,
                             claimants: claimants,
                         }))
                 } else {
                     transactionBuilder.addOperation(Operation.payment({
                         destination: destinationAccount.id,
-                        amount: sendAmount,
+                        amount: send.toString(),
                         asset: asset,
                     }));
                 }
@@ -261,7 +262,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 transactionBuilder.addOperation(Operation.payment({
                     asset: asset,
                     destination: destinationAccounts.find(a => a.role === 'asset_issuer')?.id??'',
-                    amount: sendAmount,
+                    amount: sendAmount.replace(",", ""),
                 }));
             } else if (!balanceRecord.buyingLiabilities.isZero()) {
                 // cancel the buy-offers for this asset
@@ -608,7 +609,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         setSendAmountInvalid(false);
         if (sendAmount !== undefined && sendAmount !== '') {
             try {
-                const send = new BigNumber(sendAmount.replace(',',''));
+                const send = new BigNumber(sendAmount.replaceAll(',',''));
                 const sendTotal = send.times(destinationAccounts.filter(a => a.state === 'found').length);
                 if (sendTotal.greaterThan(balanceRecord.spendable) || send.lessThan('0.0000001')) {
                     setSendAmountInvalid(true);
