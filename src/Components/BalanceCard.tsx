@@ -150,7 +150,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     const pricePerUnit = new BigNumber(record.price_r.d).div(new BigNumber(record.price_r.n));
                     return new BigNumber(record.amount).div(pricePerUnit);
                 })
-                .reduce((prev, current) => prev.add(current), currentDemand)
+                .reduce((prev, current) => prev.plus(current), currentDemand)
             );
     };
 
@@ -161,7 +161,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         const validAccounts = destinationAccounts.filter(a => a.state === 'found');
         return totalSpendable
             .dividedBy(validAccounts.length===0?1:validAccounts.length)
-            .round(7, BigNumber.ROUND_DOWN);
+            .decimalPlaces(7, BigNumber.ROUND_DOWN);
     };
 
     const saveXDR = () => {
@@ -178,7 +178,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             let opsCount = 1;
             // eslint-disable-next-line
             validDestinations.every(destinationAccount => {
-                if (balanceRecord.spendable.lessThan(sendTotal.plus(send))) {
+                if (balanceRecord.spendable.isLessThan(sendTotal.plus(send))) {
                     return false;
                 }
                 // max 99 ops to allow for potential remove trustline op
@@ -614,11 +614,11 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             try {
                 const send = new BigNumber(sendAmount.replaceAll(',',''));
                 const sendTotal = send.times(destinationAccounts.filter(a => a.state === 'found').length);
-                if (sendTotal.greaterThan(balanceRecord.spendable) || send.lessThan('0.0000001')) {
+                if (sendTotal.isGreaterThan(balanceRecord.spendable) || send.isLessThan('0.0000001')) {
                     setSendAmountInvalid(true);
                 }
                 if (send.decimalPlaces() > 7) {
-                   setSendAmount(send.round(7, BigNumber.ROUND_UP).toFormat());
+                   setSendAmount(send.decimalPlaces(7, BigNumber.ROUND_UP).toFormat());
                 }
             } catch (e) {
                 setSendAmountInvalid(true);
@@ -635,7 +635,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 .limit(200)
                 .call()
                 .then(collect)
-                .then(demand => setAssetDemand(demand.round(demand.lt(1)?7:0)))
+                .then(demand => setAssetDemand(demand.decimalPlaces(demand.isLessThan(1)?7:0)))
         }
         setCanBurn(!balanceRecord.spendable.isZero());
         setCanRemoveTrust(balanceRecord.spendable.isZero()
@@ -665,7 +665,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     style={{display: (assetDemand.isZero()?"none":""), marginTop: 25}}
                     text={assetDemand.isZero()?'':`Demand: ${assetDemand.toFormat()}`} >
                 <Card size='small' title={balanceRecord.spendable.toFormat() + ' spendable'}>
-                    <p>{balanceRecord.balance.sub(balanceRecord.spendable).toFormat()} reserved</p>
+                    <p>{balanceRecord.balance.minus(balanceRecord.spendable).toFormat()} reserved</p>
                     <b>{balanceRecord.balance.toFormat()} total</b>
                 </Card>
             </Badge.Ribbon></Badge.Ribbon></Badge.Ribbon>

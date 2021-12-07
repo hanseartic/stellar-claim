@@ -53,7 +53,7 @@ const getEstimatedProceedings = (selectedBalances: ClaimableBalanceRecord[], hor
         .strictSendPaths(getStellarAsset(balance.asset), balance.amount, [Asset.native()])
         .call()
         .then(({records}) =>
-            records.find(r => new BigNumber(r.destination_amount).times(10000000).greaterThan(BASE_FEE))
+            records.find(r => new BigNumber(r.destination_amount).times(10000000).isGreaterThan(BASE_FEE))
         )
         .then(sendPath => {
             const path = sendPath?.path
@@ -64,7 +64,7 @@ const getEstimatedProceedings = (selectedBalances: ClaimableBalanceRecord[], hor
                 asset: balance.asset,
                 amount: balance.amount,
                 path: path,
-                minProceeds: new BigNumber(sendPath?.destination_amount??0).times(0.95).round(7).toString(),
+                minProceeds: new BigNumber(sendPath?.destination_amount??0).times(0.95).decimalPlaces(7).toString(),
                 trash: sendPath === undefined,
             }
         })
@@ -155,7 +155,7 @@ export default function ClaimBalances() {
         getEstimatedProceedings(selectedBalances, horizonUrl().href)
             .then(balances => balances
                 .map(balance => new BigNumber(balance.minProceeds))
-                .reduce((p, c) => p.add(c), new BigNumber(0))
+                .reduce((p, c) => p.plus(c), new BigNumber(0))
             )
             .then(proceedings => setEstimatedProceedings(proceedings))
     // eslint-disable-next-line
@@ -177,7 +177,7 @@ export default function ClaimBalances() {
                         .filter((result): result is xdr.PathPaymentStrictSendResultSuccess => true)
                         .map(result => result.last().amount().toString())
                         .map(amount => new BigNumber(amount).div(10000000))
-                        .reduce((prev, current) => prev.add(current), new BigNumber(0))
+                        .reduce((prev, current) => prev.plus(current), new BigNumber(0))
                         .minus(new BigNumber(tr.feeCharged().toString()).div(10000000));
                     notification.info({
                         message: `Cleaning claimable balances yielded proceedings of ${proceedings} XLM.`,

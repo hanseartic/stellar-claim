@@ -31,7 +31,7 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
         title: 'Amount',
         dataIndex: 'amount',
         key: 'amount',
-        render: (amount: string) => new BigNumber(amount).round(8).toFormat(),
+        render: (amount: string) => new BigNumber(amount).decimalPlaces(8).toFormat(),
     },
     {
         title: 'Asset',
@@ -131,7 +131,7 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                             information: ({
                                 ...record.information,
                                 validFrom: record.information?.validFrom
-                                    ??new BigNumber(Date.parse(transactionRecords[0].created_at)).div(1000).round(0).toNumber()
+                                    ??new BigNumber(Date.parse(transactionRecords[0].created_at)).idiv(1000).toNumber()
                             }),
                         } as ClaimableBalanceRecord))
                 })));

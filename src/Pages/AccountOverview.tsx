@@ -59,9 +59,9 @@ export default function AccountOverview() {
                         const subentryCount = new BigNumber(accountInformation.account?.subentry_count??0);
                         reserves = reserves
                             // reserves for data-entries, offers, signers, trust-lines
-                            .add(subentryCount.isZero() ? 0 : subentryCount.div(2))
+                            .plus(subentryCount.isZero() ? 0 : subentryCount.div(2))
                             // account base reserve
-                            .add(1);
+                            .plus(1);
                     }
 
                     return {
@@ -73,8 +73,8 @@ export default function AccountOverview() {
                         buyingLiabilities: new BigNumber(balanceLine.buying_liabilities),
                         sellingLiabilities: new BigNumber(balanceLine.selling_liabilities),
                         spendable: new BigNumber(balanceLine.balance)
-                            .sub(new BigNumber(balanceLine.selling_liabilities))
-                            .sub(reserves)
+                            .minus(new BigNumber(balanceLine.selling_liabilities))
+                            .minus(reserves)
                     };
                 }
             ));
