@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Table, TablePaginationConfig} from 'antd';
 import {ColumnsType, TableRowSelection} from 'antd/lib/table/interface';
 import useApplicationState from '../../useApplicationState';
@@ -12,6 +12,7 @@ import StellarAddressLink from '../StellarAddressLink';
 import URI from 'urijs';
 import BigNumber from "bignumber.js";
 import {predicateFromHorizonResponse, getPredicateInformation, PredicateInformation} from "stellar-resolve-claimant-predicates";
+import {formatAmount} from "../AmountInput";
 
 interface Claimant {
     destination: string,
@@ -31,7 +32,7 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
         title: 'Amount',
         dataIndex: 'amount',
         key: 'amount',
-        render: (amount: string) => new BigNumber(amount).decimalPlaces(8).toFormat(),
+        render: (amount: string) => formatAmount(amount),
     },
     {
         title: 'Asset',
@@ -178,43 +179,45 @@ export default function ClaimableBalancesOverview() {
         setPagination(p => ({...p, total: ((p.total??0) + itemCount),}));
     };
 
-    const reload = () => {
-        if (balancesLoading) return;
-        if (accountParam && accountInformation.state === undefined) return;
+    const reloadHook = useCallback(() => {
+        const reload = () => {
+            if (balancesLoading) return;
+            if (accountParam && accountInformation.state === undefined) return;
 
-        setSelectedBalanceIds([]);
-        setPagination(p => ({...p, total: 0,}));
-        if (dontShowBalancesReasons.has(accountInformation.state)) {
-            setBalancesLoading(false);
-            setBalances([]);
-            return;
-        }
-        setBalancesLoading(true);
-        const searchParams: URLSearchParams = new URLSearchParams();
-        if (accountInformation.state !== AccountState.notSet) {
-            accountInformation.account && searchParams.set('claimant', accountInformation.account.account_id);
-        }
-        searchParams.set('cursor', '');
-        searchParams.set('limit', '100');
-        searchParams.set('order', 'asc');
+            setSelectedBalanceIds([]);
+            setPagination(p => ({...p, total: 0,}));
+            if (dontShowBalancesReasons.has(accountInformation.state)) {
+                setBalancesLoading(false);
+                setBalances([]);
+                return;
+            }
+            setBalancesLoading(true);
+            const searchParams: URLSearchParams = new URLSearchParams();
+            if (accountInformation.state !== AccountState.notSet) {
+                accountInformation.account && searchParams.set('claimant', accountInformation.account.account_id);
+            }
+            searchParams.set('cursor', '');
+            searchParams.set('limit', '100');
+            searchParams.set('order', 'asc');
 
-        loadClaimableBalances({
-            baseUrl: horizonUrl(),
-            onPage: onBalancePageLoaded,
-            maxItems: loadBalancesMax,
-            searchParams: searchParams,
-        })
-            .then(r => {
-                setBalances(r);
-                setPagination(p => ({...p, total: r.length,}));
+            loadClaimableBalances({
+                baseUrl: horizonUrl(),
+                onPage: onBalancePageLoaded,
+                maxItems: loadBalancesMax,
+                searchParams: searchParams,
             })
-            .finally(() => setBalancesLoading(false));
-    }
+                .then(r => {
+                    setBalances(r);
+                    setPagination(p => ({...p, total: r.length,}));
+                })
+                .finally(() => setBalancesLoading(false));
+        }
+        reload();
+    }, [accountInformation.account, accountInformation.state, accountParam, balancesLoading, horizonUrl, setBalancesLoading]);
 
     useEffect(() => {
-        reload();
-    // eslint-disable-next-line
-    }, [accountInformation, usePublicNetwork]);
+        reloadHook();
+    }, [accountInformation, usePublicNetwork, reloadHook]);
 
     useEffect(() => {
         setSelectedBalances(balances.filter(b => selectedBalanceIds.includes(b.id)));

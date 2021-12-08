@@ -57,6 +57,7 @@ import moment from "moment";
 import { RangeValue } from 'rc-picker/lib/interface';
 import EmojiInput, {emojiShortcodeMatch} from "./EmojiInput";
 import runes from 'runes';
+import AmountInput, {amountFormat} from "./AmountInput";
 
 type BalanceLine = Horizon.BalanceLine;
 type BalanceLineAsset = Horizon.BalanceLineAsset;
@@ -128,7 +129,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [destinationAccountId, setDestinationAccountId] = useState('')
     const [horizonUrl, setHorizonUrl] = useState(fnHorizonUrl().href);
     const [isBurn, setIsBurn] = useState(false);
-    const [sendAmount, setSendAmount] = useState('')
+    const [sendAmount, setSendAmount] = useState<BigNumber|undefined>(undefined)
     const [sendAmountInvalid, setSendAmountInvalid] = useState(false)
     const [sendAsClaimable, setSendAsClaimable] = useState(true);
     const [sendPopoverVisible, setSendPopoverVisible] = useState(false);
@@ -169,7 +170,6 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         let sendTotal = new BigNumber(0);
         let validDestinations = destinationAccounts.filter(a => a.state === 'found');
         const xdrs = [];
-        const send = new BigNumber(sendAmount.replaceAll(',',''));
         while (validDestinations.length > 0) {
             const transactionBuilder = new TransactionBuilder(
                 accountInformation.account!,
@@ -178,12 +178,12 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             let opsCount = 1;
             // eslint-disable-next-line
             validDestinations.every(destinationAccount => {
-                if (balanceRecord.spendable.isLessThan(sendTotal.plus(send))) {
+                if (balanceRecord.spendable.isLessThan(sendTotal.plus(sendAmount??0))) {
                     return false;
                 }
                 // max 99 ops to allow for potential remove trustline op
                 if (opsCount > 100) return false;
-                sendTotal = sendTotal.plus(send);
+                sendTotal = sendTotal.plus(sendAmount??0);
 
                 if (sendAsClaimable) {
                     const claimValidFrom = claimableRange?.[0]?.unix();
@@ -213,14 +213,14 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     }
                     transactionBuilder
                         .addOperation(Operation.createClaimableBalance({
-                            amount: send.toString(),
+                            amount: sendAmount?.toString()??'',
                             asset: asset,
                             claimants: claimants,
                         }))
                 } else {
                     transactionBuilder.addOperation(Operation.payment({
                         destination: destinationAccount.id,
-                        amount: send.toString(),
+                        amount: sendAmount?.toString()??'',
                         asset: asset,
                     }));
                 }
@@ -265,7 +265,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 transactionBuilder.addOperation(Operation.payment({
                     asset: asset,
                     destination: destinationAccounts.find(a => a.role === 'asset_issuer')?.id??'',
-                    amount: sendAmount.replaceAll(",", ""),
+                    amount: sendAmount?.toString()??'',
                 }));
             } else if (!balanceRecord.buyingLiabilities.isZero()) {
                 // cancel the buy-offers for this asset
@@ -282,7 +282,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                         );
                     })
             }
-            if (!isBurn || (balanceRecord.balance.eq(sendAmount) && autoRemoveTrustlines)) {
+            if (!isBurn || (balanceRecord.balance.eq(sendAmount??0) && autoRemoveTrustlines)) {
                 transactionBuilder.addOperation(Operation.changeTrust({
                     asset: asset,
                     limit: '0',
@@ -344,7 +344,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 tb().then(transactionBuilder => setXDRs([transactionBuilder.build().toXDR()]));
             }}
             icon={isBurn?<FireOutlined />:<DeleteOutlined />}
-        >{sendAmount === '0'?'remove':'burn'}</Button>
+        >{sendAmount?.isEqualTo(0)?'remove':'burn'}</Button>
                 </Col>
             </Row>
         </Card>
@@ -372,13 +372,13 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     }
     const sendPopoverContent = <>
         <Space direction={"vertical"} style={{width: 625}} >
-            <Input
+            <AmountInput
                 allowClear
-                onChange={e => setSendAmount(e.target.value)}
-                placeholder={getSpendable(balanceRecord.spendable).toFormat(7)}
+                onChange={amount => setSendAmount(amount)}
+                placeholder={getSpendable(balanceRecord.spendable).toFormat(amountFormat)}
                 addonBefore={<Tooltip placement={"topLeft"} overlay='Enter the amount to send. The placeholder will show the spendable amount.'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
                 addonAfter={<Tooltip placement={"topRight"} overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
-                    setSendAmount(getSpendable(balanceRecord.spendable).toFormat(7))
+                    setSendAmount(getSpendable(balanceRecord.spendable))
                 } style={{cursor: "pointer"}}/></Tooltip>}
                 value={sendAmount}
                 style={{borderColor:sendAmountInvalid?'red':undefined}}
@@ -559,7 +559,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     setXDRs(xdrs => xdrs.slice(1));
                     setDestinationAccounts([]);
                     setDestinationAccountId('');
-                    setSendAmount('');
+                    setSendAmount(undefined);
                     setSubmitting(false);
                     setSendPopoverVisible(false);
                     setBurnRemovePopoverVisible(false);
@@ -610,15 +610,11 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     }, [destinationAccountId, horizonUrl, balanceRecord.asset, accountInformation.account]);
     useEffect(() => {
         setSendAmountInvalid(false);
-        if (sendAmount !== undefined && sendAmount !== '') {
+        if (sendAmount !== undefined) {
             try {
-                const send = new BigNumber(sendAmount.replaceAll(',',''));
-                const sendTotal = send.times(destinationAccounts.filter(a => a.state === 'found').length);
-                if (sendTotal.isGreaterThan(balanceRecord.spendable) || send.isLessThan('0.0000001')) {
+                const sendTotal = sendAmount.times(destinationAccounts.filter(a => a.state === 'found').length);
+                if (sendTotal.isGreaterThan(balanceRecord.spendable) || sendAmount.isLessThan('0.0000001')) {
                     setSendAmountInvalid(true);
-                }
-                if (send.decimalPlaces() > 7) {
-                   setSendAmount(send.decimalPlaces(7, BigNumber.ROUND_UP).toFormat());
                 }
             } catch (e) {
                 setSendAmountInvalid(true);
@@ -655,18 +651,18 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         <Badge.Ribbon
             color='red'
             style={{display: (balanceRecord.sellingLiabilities.isZero()?"none":""), marginTop: bidOffset}}
-            text={balanceRecord.sellingLiabilities.isZero()?'':`Bid: ${balanceRecord.sellingLiabilities.toFormat()}`}>
+            text={balanceRecord.sellingLiabilities.isZero()?'':`Bid: ${balanceRecord.sellingLiabilities.toFormat(amountFormat)}`}>
             <Badge.Ribbon
                 color='lime'
                 style={{marginTop: askOffset, display: (balanceRecord.buyingLiabilities.isZero()?"none":"")}}
-                text={balanceRecord.buyingLiabilities.isZero()?'':`Ask: ${balanceRecord.buyingLiabilities.toFormat()}`}>
+                text={balanceRecord.buyingLiabilities.isZero()?'':`Ask: ${balanceRecord.buyingLiabilities.toFormat(amountFormat)}`}>
                 <Badge.Ribbon
                     color='blue'
                     style={{display: (assetDemand.isZero()?"none":""), marginTop: 25}}
-                    text={assetDemand.isZero()?'':`Demand: ${assetDemand.toFormat()}`} >
-                <Card size='small' title={balanceRecord.spendable.toFormat() + ' spendable'}>
-                    <p>{balanceRecord.balance.minus(balanceRecord.spendable).toFormat()} reserved</p>
-                    <b>{balanceRecord.balance.toFormat()} total</b>
+                    text={assetDemand.isZero()?'':`Demand: ${assetDemand.toFormat(amountFormat)}`} >
+                <Card size='small' title={balanceRecord.spendable.toFormat(amountFormat) + ' spendable'}>
+                    <p>{balanceRecord.balance.minus(balanceRecord.spendable).toFormat(amountFormat)} reserved</p>
+                    <b>{balanceRecord.balance.toFormat(amountFormat)} total</b>
                 </Card>
             </Badge.Ribbon></Badge.Ribbon></Badge.Ribbon>
         <Row><Col flex={1}><Popover
@@ -680,7 +676,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 block
                 disabled={balanceRecord.spendable.isZero()}
                 icon={<SendOutlined />}
-                onClick={() => {setSendAmount(''); setDestinationAccounts([]); setClaimableRange(null)}}
+                onClick={() => {setSendAmount(undefined); setDestinationAccounts([]); setClaimableRange(null)}}
                 >Send
             </Button>
         </Popover></Col>
@@ -698,7 +694,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 disabled={!(canBurn || canRemoveTrust)}
                 onClick={() => {
                     setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer());
-                    setSendAmount(balanceRecord.spendable.toString(10));
+                    setSendAmount(balanceRecord.spendable);
                 }}
             >{!balanceRecord.spendable.isZero()?'Burn':'Remove'}
             </Button>
