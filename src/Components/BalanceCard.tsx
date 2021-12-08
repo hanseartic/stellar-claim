@@ -571,43 +571,49 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         if (destinationAccountId.length > 0) {
             const accountIds = destinationAccountId.split(/[-,;.\s]/);
             const processingAccounts = accountIds.filter(id => id.length === 56);
-            processingAccounts.forEach(destination => {
-                setDestinationAccounts(accounts => [
-                    ...accounts.filter(a => a.id !== destination),
-                    {id: destination, state: 'loading', role: 'unknown'} as DestinationAccount
-                ].sort(compareAccounts));
-                new Server(horizonUrl)
-                    .loadAccount(destination)
-                    .then(account => setDestinationAccounts(accounts => [
+            processingAccounts
+                .filter(destination => !destinationAccounts.find(d => d.id === destination && d.state === 'found'))
+                .forEach(destination => {
+                    setDestinationAccounts(accounts => [
                         ...accounts.filter(a => a.id !== destination),
-                        {
-                            id: destination,
-                            state: 'found',
-                            role: account.id === accountInformation.account?.id
-                                ? 'self'
-                                : isAssetIssuedByAccount(getStellarAsset(balanceRecord.asset), account.id)
-                                    ? 'asset_issuer'
-                                    : hasAccountTrustLine(account, balanceRecord.asset)
-                                        ? 'trust'
-                                        : 'notrust',
-                            trusted: hasAccountTrustLine(account, balanceRecord.asset),
-                            balance: getBalanceLineFromAccount(account, balanceRecord.asset),
-                        } as DestinationAccount
-                    ].sort(compareAccounts)))
-                    .catch(() => {
-                        setDestinationAccounts(accounts => [
+                        {id: destination, state: 'loading', role: 'unknown'} as DestinationAccount
+                    ].sort(compareAccounts));
+                    new Server(horizonUrl)
+                        .loadAccount(destination)
+                        .then(account => setDestinationAccounts(accounts => [
                             ...accounts.filter(a => a.id !== destination),
                             {
                                 id: destination,
-                                state: 'invalid',
-                                role: 'error',
+                                state: 'found',
+                                role: account.id === accountInformation.account?.id
+                                    ? 'self'
+                                    : isAssetIssuedByAccount(getStellarAsset(balanceRecord.asset), account.id)
+                                        ? 'asset_issuer'
+                                        : hasAccountTrustLine(account, balanceRecord.asset)
+                                            ? 'trust'
+                                            : 'notrust',
+                                trusted: hasAccountTrustLine(account, balanceRecord.asset),
+                                balance: getBalanceLineFromAccount(account, balanceRecord.asset),
                             } as DestinationAccount
-                        ]);
-                    });
-            });
-            setDestinationAccountId(accountIds.filter(id => id.length !== 56).join(' '));
+                        ].sort(compareAccounts)))
+                        .catch(() => {
+                            setDestinationAccounts(accounts => [
+                                ...accounts.filter(a => a.id !== destination),
+                                {
+                                    id: destination,
+                                    state: 'invalid',
+                                    role: 'error',
+                                } as DestinationAccount
+                            ]);
+                        });
+                });
+            // keep unprocessed unique account ids in the input field
+            setDestinationAccountId(accountIds
+                .filter(id => !processingAccounts.includes(id))
+                .filter((id, idIndex, ids) => ids.indexOf(id) === idIndex)
+                .join(' '));
         }
-    }, [destinationAccountId, horizonUrl, balanceRecord.asset, accountInformation.account]);
+    }, [accountInformation.account, balanceRecord.asset, destinationAccountId, destinationAccounts, horizonUrl]);
     useEffect(() => {
         setSendAmountInvalid(false);
         if (sendAmount !== undefined) {
