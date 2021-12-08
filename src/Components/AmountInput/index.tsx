@@ -5,7 +5,7 @@ import {useEffect, useRef, useState} from "react";
 
 export const amountFormat = {
     fractionGroupSeparator: ' ',
-    fractionGroupSize: 4,
+    fractionGroupSize: 3,
     groupSeparator: ',',
     groupSize: 3,
     decimalSeparator: '.'
