@@ -183,6 +183,7 @@ export default function ClaimableBalancesOverview() {
         const reload = () => {
             if (balancesLoading) return;
             if (accountParam && accountInformation.state === undefined) return;
+            setBalancesLoading(true);
 
             setSelectedBalanceIds([]);
             setPagination(p => ({...p, total: 0,}));
@@ -191,7 +192,6 @@ export default function ClaimableBalancesOverview() {
                 setBalances([]);
                 return;
             }
-            setBalancesLoading(true);
             const searchParams: URLSearchParams = new URLSearchParams();
             if (accountInformation.state !== AccountState.notSet) {
                 accountInformation.account && searchParams.set('claimant', accountInformation.account.account_id);
@@ -216,8 +216,9 @@ export default function ClaimableBalancesOverview() {
     }, [accountInformation.account, accountInformation.state, accountParam, balancesLoading, horizonUrl, setBalancesLoading]);
 
     useEffect(() => {
-        reloadHook();
-    }, [accountInformation, usePublicNetwork, reloadHook]);
+        if (!balancesLoading) reloadHook();
+        // eslint-disable-next-line
+    }, [accountInformation, usePublicNetwork]);
 
     useEffect(() => {
         setSelectedBalances(balances.filter(b => selectedBalanceIds.includes(b.id)));
