@@ -390,6 +390,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 onBlur={e => setDestinationAccountId(e.target.value)}
                 placeholder={`${shortAddress(Keypair.random().publicKey(), 16)} [${shortAddress(Keypair.random().publicKey(), 16)}] […]`}
                 addonBefore={<Tooltip placement={"topLeft"}  overlay={<>Enter the recipient address(es).<br/><br/>Multiple addresses can be entered or pasted one-by-one or separated by a space.</>}><FontAwesomeIcon icon={faPeopleArrows}/></Tooltip>}
+                addonAfter={<Tooltip placement={"topRight"} overlay={<>When entering more than 100 addresses you will have to sign multiple transactions in a row.</>}><div style={{color: "lightgray", cursor: "default"}}>{destinationAccounts.filter(a => a.state === 'found').length} recipients</div></Tooltip>}
                 /*addonAfter={<Tooltip overlay='Click here to burn the asset'><FireOutlined onClick={() => { setDestinationAccountId(getStellarAsset(balanceRecord.asset).getIssuer()); }}/></Tooltip>}*/
                 value={destinationAccountId}
             />
