@@ -32,7 +32,7 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
         title: 'Amount',
         dataIndex: 'amount',
         key: 'amount',
-        render: (amount: string) => formatAmount(amount),
+        render: (amount: string) => formatAmount(amount, false),
     },
     {
         title: 'Asset',

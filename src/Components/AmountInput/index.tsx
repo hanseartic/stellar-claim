@@ -3,6 +3,7 @@ import {InputProps} from "antd/lib/input/Input";
 import {Input} from "antd";
 import {useEffect, useRef, useState} from "react";
 
+const stroopsRatio = 10000000;
 export const amountFormat = {
     fractionGroupSeparator: ' ',
     fractionGroupSize: 3,
@@ -11,8 +12,11 @@ export const amountFormat = {
     decimalSeparator: '.'
 };
 
-export const formatAmount = (stringAmount: string): string =>
-    parseFormattedStringValueToBigNumber(stringAmount)?.toFormat(amountFormat)??'';
+export const formatAmount = (stringAmount: string, asStroop: boolean): string =>
+    parseFormattedStringValueToBigNumber(stringAmount)
+        ?.multipliedBy(asStroop?stroopsRatio:1)
+        .toFormat(amountFormat)
+    ??'';
 
 const parseFormattedStringValueToBigNumber = (stringValue: string): BigNumber|undefined => {
     if (stringValue === null) {
@@ -30,7 +34,8 @@ const parseFormattedStringValueToBigNumber = (stringValue: string): BigNumber|un
         .replace(new RegExp(separators[0].replace(/\s/g," "),"g"), "")
         .replace(separators[1],".")
         .replace(/[\s   ]/g, "")
-    ).decimalPlaces(7, BigNumber.ROUND_HALF_CEIL);
+    )
+        .decimalPlaces(7, BigNumber.ROUND_HALF_CEIL);
 };
 
 interface AmountInputProps extends Omit<InputProps, "onChange"|"value"> {
@@ -45,7 +50,7 @@ const AmountInput = (props: AmountInputProps) => {
     const [cursorPos, setCursorPos] = useState<number|null>(null);
     const {onChange, value} = props;
     const notifyChange = (val: BigNumber|undefined) => {
-        onChange?.(val);
+        onChange?.(val?.div(props.showAsStroops?stroopsRatio:1));
     };
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,11 +90,13 @@ const AmountInput = (props: AmountInputProps) => {
 
     useEffect(() => {
         setStringValue(prev => {
-            const newStringValue = value?.toFormat(amountFormat)??'';
+            const newStringValue = value
+                ?.multipliedBy(props.showAsStroops?stroopsRatio:1)
+                .toFormat(amountFormat)??'';
             return parseFormattedStringValueToBigNumber(prev)?.eq(value??0)
                 ? prev : newStringValue;
         });
-    }, [value]);
+    }, [value, props.showAsStroops]);
 
     useEffect(() => {
         const inputElement = inputRef.current;
