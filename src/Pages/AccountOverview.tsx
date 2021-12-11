@@ -74,7 +74,8 @@ export default function AccountOverview() {
                         sellingLiabilities: new BigNumber(balanceLine.selling_liabilities),
                         spendable: new BigNumber(balanceLine.balance)
                             .minus(new BigNumber(balanceLine.selling_liabilities))
-                            .minus(reserves)
+                            .minus(reserves),
+                        showAsStroop: false
                     };
                 }
             ));
