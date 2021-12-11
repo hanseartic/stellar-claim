@@ -291,64 +291,60 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
             return transactionBuilder;
         }
         const burnHint = <>
-            By clicking the button below you will burn all of your spendable funds of this asset.<br /><br />
-            If you only want to burn parts of the spendable funds, use the send-button <br/>
-            and enter the following destination instead:<br/><br/>
+            <>By clicking the button below you will burn all of your spendable funds of this asset.</>
+            <>If you only want to burn parts of the spendable funds, use the send-button
+            and enter the following destination instead:</>
             <pre>{asset.getIssuer()}</pre>
-
-            <Row gutter={16}>
-                <Col span='flex'>
-            <Tooltip
-                overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
-                <Switch
-                    defaultChecked={autoRemoveTrustlines}
-                    onChange={setAutoRemoveTrustlines}
-                    checked={autoRemoveTrustlines}
-                    checkedChildren={<FontAwesomeIcon icon={faUnlink}/>}
-                    unCheckedChildren={<FontAwesomeIcon icon={faLink}/>}
-                />
-            </Tooltip>
-                </Col>
-                <Col span='flex'>{autoRemoveTrustlines?'Remove':'Keep'} the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> if possible</Col>
-            </Row>
+            <Space direction={"horizontal"}>
+                <Tooltip
+                    overlay='When sending all funds of an asset, the trustline can be removed. This will free up 0.5 XLM'>
+                    <Switch
+                        defaultChecked={autoRemoveTrustlines}
+                        onChange={setAutoRemoveTrustlines}
+                        checked={autoRemoveTrustlines}
+                        checkedChildren={<FontAwesomeIcon icon={faUnlink}/>}
+                        unCheckedChildren={<FontAwesomeIcon icon={faLink}/>}
+                    />
+                </Tooltip>
+                <span>{autoRemoveTrustlines?'Remove':'Keep'} the <a href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines" target="_blank" rel="noreferrer">trustline</a> if possible</span>
+            </Space>
         </>;
 
         const removeHint = <>
-            By clicking the button below you will remove the trustline to this asset.<br/>
-            This will free up 0.5 XLM from the reserve.
-            {(()=>{if (!balanceRecord.buyingLiabilities.isZero()){
-                return <Row>
-                    There are open offers on SDEX to buy this asset.<br/>
-                    In order to remove the trustline they will be cancelled.
-                </Row>
-            }})()}
+            <>By clicking the button below you will remove the trustline to this asset.</>
+            <>This will free up 0.5 XLM from the reserve.</>
+            {balanceRecord.buyingLiabilities.isZero()
+                ? <></>
+                : (<>
+                    <>There are open offers on SDEX to buy this asset.</>
+                    <>In order to remove the trustline they will be cancelled.</>
+                </>)
+            }
         </>;
-        return (
-        <Card title={isBurn?'Burn spendable amounts of this asset':'Remove trustline for this asset'}>
-            {isBurn?burnHint:removeHint}
-            <Row gutter={16}>
-                <Col flex={1}><Input
+        return (<Card title={isBurn?'Burn spendable amounts of this asset':'Remove trustline for this asset'}>
+            <Space direction={"vertical"}>
+                {isBurn?burnHint:removeHint}
+                <EmojiInput
                     allowClear
                     maxLength={28}
-                    onChange={e => setTransactionMemo(e.target.value)}
+                    onChange={e => setTransactionMemo(e??'')}
                     prefix={<Tooltip overlay='Enter a memo'><FontAwesomeIcon icon={faCommentDots}/></Tooltip>}
                     placeholder='via balances.lumens.space'
                     value={transactionMemo}
-                /></Col>
-            </Row>
-            <Row gutter={16} justify='end'>
-                <Col span='flex'>
-        <Button
-            loading={submitting}
-            onClick={() => {
-                tb().then(transactionBuilder => setXDRs([transactionBuilder.build().toXDR()]));
-            }}
-            icon={isBurn?<FireOutlined />:<DeleteOutlined />}
-        >{sendAmount?.isEqualTo(0)?'remove':'burn'}</Button>
-                </Col>
-            </Row>
-        </Card>
-        )
+                />
+                <Row gutter={16} justify='end'>
+                    <Col span='flex'>
+                        <Button
+                            loading={submitting}
+                            onClick={() => {
+                                tb().then(transactionBuilder => setXDRs([transactionBuilder.build().toXDR()]));
+                            }}
+                            icon={isBurn?<FireOutlined />:<DeleteOutlined />}
+                        >{sendAmount?.isEqualTo(0)?'remove':'burn'}</Button>
+                    </Col>
+                </Row>
+            </Space>
+        </Card>)
     };
 
     const onDateSelected = (claimableRange: RangeValue<moment.Moment>) => {
