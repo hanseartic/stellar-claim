@@ -22,11 +22,11 @@ export default function AssetImage ({asset, assetInformation}: { asset: Asset, a
         alt={`Logo for asset ${assetInformation.code} issued by ${assetInformation.issuer}`}
         shape='circle'
         size={40}
-        src={imageSource?<Image src={imageSource} preview={{mask: undefined}} />:false}
+        src={imageSource?<Image src={imageSource} preview={{mask: <></>}} />:false}
         children={(
             (assetInformation.code??'')
                 // get only uppercase characters - if any
                 .match(/\p{Lu}/gu)??[assetInformation.code?.toUpperCase()])
-            .join('').substr(0, 4)}
+            .join('').substring(0, 4)}
     />);
 };
