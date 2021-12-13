@@ -5,15 +5,11 @@ import useApplicationState from '../useApplicationState';
 import AssetPresenter from '../Components/AssetPresenter';
 import {BigNumber} from 'bignumber.js';
 import StellarHelpers, {shortAddress} from '../StellarHelpers';
-import URI from 'urijs';
-import {TransactionCallBuilder} from 'stellar-sdk/lib/transaction_call_builder';
-import {Horizon, ServerApi} from 'stellar-sdk';
+import {Horizon, Server, ServerApi} from 'stellar-sdk';
 import StellarAddressLink from '../Components/StellarAddressLink';
 import BalanceCard, { AccountBalanceRecord } from "../Components/BalanceCard";
 
-type BalanceLineAsset = Horizon.BalanceLineAsset;
-type BalanceLineNative = Horizon.BalanceLineNative;
-type BalanceLine = Horizon.BalanceLine;
+type BalanceLine = Exclude<Horizon.BalanceLine, Horizon.BalanceLineLiquidityPool>;
 
 const balancesTableColumns = [
     {
@@ -36,7 +32,7 @@ export default function AccountOverview() {
     useEffect(() => {
 
         if (accountInformation.account) {
-            new TransactionCallBuilder(new URI(horizonUrl()))
+            new Server(horizonUrl().href).transactions()
                 .forAccount(accountInformation.account.id)
                 .order('asc')
                 .limit(1)
@@ -50,7 +46,7 @@ export default function AccountOverview() {
                 .catch(() => setAccountCreated({}));
 
             setAccountBalances(accountInformation.account?.balances
-                .filter((b: BalanceLine): b is (BalanceLineAsset|BalanceLineNative) =>
+                .filter((b): b is BalanceLine =>
                     b.asset_type !== 'liquidity_pool_shares'
                 )
                 .map((balanceLine) => {
@@ -63,7 +59,6 @@ export default function AccountOverview() {
                             // account base reserve
                             .plus(1);
                     }
-
                     return {
                         account: accountInformation.account!,
                         asset: balanceLine.asset_type !== 'native'
