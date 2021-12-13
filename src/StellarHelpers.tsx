@@ -180,7 +180,7 @@ const assetIsStroopsAsset = async (network: knownNetworks, asset: string): Promi
     if (asset === 'native:XLM') {
         return false;
     }
-    const showAsStroopKey = 'showAsStroops.'+network;
+    const showAsStroopKey = 'showAsStroops.' + network;
     const showAsStroops: () => {[key: string]: boolean} = () => {
         return JSON.parse(localStorage.getItem(showAsStroopKey)??"{}");
     };

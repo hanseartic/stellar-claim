@@ -23,6 +23,7 @@ interface ClaimableBalanceRecord extends ServerApi.ClaimableBalanceRecord {
     transaction_memo?: string,
     claimant?: Claimant|null,
     information?: PredicateInformation,
+    showAsStroops: boolean,
 }
 
 const loadBalancesMax = 300;
@@ -30,9 +31,8 @@ const loadBalancesMax = 300;
 const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
     {
         title: 'Amount',
-        dataIndex: 'amount',
         key: 'amount',
-        render: (amount: string) => formatAmount(amount, false),
+        render: (cb: ClaimableBalanceRecord) => formatAmount(cb.amount, cb.showAsStroops),
     },
     {
         title: 'Asset',
@@ -81,13 +81,14 @@ interface LoadClaimableBalancesParams {
     onPage: (itemCount: number, current: string, next?: string) => void;
     maxItems?: number;
     searchParams: URLSearchParams;
+    assetIsStroopsAsset: (asset: string) => Promise<boolean>;
 }
 
 const isValidClaimableBalance = (claimableBalance: ClaimableBalanceRecord) => {
     return claimableBalance.information?.status !== 'expired';
 }
 
-const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: LoadClaimableBalancesParams) => {
+const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams, assetIsStroopsAsset}: LoadClaimableBalancesParams) => {
     const accountsUrl = new URL('/accounts/', baseUrl);
     const claimableBalancesUrl = new URL('/claimable_balances', baseUrl);
     searchParams.forEach((v, k) => claimableBalancesUrl.searchParams.set(k, v));
@@ -125,7 +126,7 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                     return new TransactionCallBuilder(new URI(baseUrl))
                         .forClaimableBalance(record.id)
                         .call()
-                        .then(({records: transactionRecords}) => ({
+                        .then(async ({records: transactionRecords}) => ({
                             ...record,
                             transaction_memo: transactionRecords[0]?.memo,
                             // when there is no time-bound set use the ledger time
@@ -134,6 +135,7 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                                 validFrom: record.information?.validFrom
                                     ??new BigNumber(Date.parse(transactionRecords[0].created_at)).idiv(1000).toNumber()
                             }),
+                            showAsStroops: await assetIsStroopsAsset(record.asset)
                         } as ClaimableBalanceRecord))
                 })));
 
@@ -149,6 +151,7 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams}: 
                     onPage: onPage,
                     maxItems: maxItems-filteredRecords.length,
                     searchParams: searchParams,
+                    assetIsStroopsAsset: assetIsStroopsAsset,
                 });
                 filteredRecords.push.apply(filteredRecords, more);
             }
@@ -163,7 +166,7 @@ const dontShowBalancesReasons = new Set([
     undefined,
 ]);
 export default function ClaimableBalancesOverview() {
-    const {horizonUrl} = StellarHelpers();
+    const {horizonUrl, assetIsStroopsAsset} = StellarHelpers();
 
     const { account: accountParam } = useParams<{account?: string}>();
     const {accountInformation, balancesClaiming, balancesLoading, usePublicNetwork, setBalancesLoading, setSelectedBalances} = useApplicationState();
@@ -205,6 +208,7 @@ export default function ClaimableBalancesOverview() {
                 onPage: onBalancePageLoaded,
                 maxItems: loadBalancesMax,
                 searchParams: searchParams,
+                assetIsStroopsAsset: assetIsStroopsAsset,
             })
                 .then(r => {
                     setBalances(r);
@@ -213,7 +217,7 @@ export default function ClaimableBalancesOverview() {
                 .finally(() => setBalancesLoading(false));
         }
         reload();
-    }, [accountInformation.account, accountInformation.state, accountParam, balancesLoading, horizonUrl, setBalancesLoading]);
+    }, [accountInformation.account, accountInformation.state, accountParam, balancesLoading, horizonUrl, setBalancesLoading, assetIsStroopsAsset]);
 
     useEffect(() => {
         if (!balancesLoading) reloadHook();
