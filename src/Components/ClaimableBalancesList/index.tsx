@@ -30,6 +30,7 @@ const loadBalancesMax = 300;
 
 const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
     {
+        width: '9em',
         title: 'Amount',
         key: 'amount',
         render: (cb: ClaimableBalanceRecord) => formatAmount(cb.amount, cb.showAsStroops),
@@ -39,9 +40,9 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
         dataIndex: 'asset',
         key: 'asset',
         render: (asset: string) => <AssetPresenter code={asset} />,
-
     },
     {
+        width: '6em',
         title: 'Sender',
         dataIndex: 'sponsor',
         key: 'sponsor',
@@ -49,11 +50,14 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
         responsive: ['xxl', 'xl', 'lg', 'md', ],
     },
     {
+        width: '28ch',
         title: 'Memo',
         dataIndex: 'transaction_memo',
         responsive: ['xxl', 'xl', 'lg', 'md', 'sm'],
+        render: memo => <pre style={{maxWidth: '28ch'}}>{memo}</pre>,
     },
     {
+        width: '12em',
         title: 'Claimable after',
         key: 'valid_from',
         dataIndex: ['information', 'validFrom'],
@@ -65,6 +69,7 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
         responsive: ['xxl', 'xl'],
     },
     {
+        width: '12em',
         title: 'Expires',
         key: 'valid_to',
         dataIndex: ['information', 'validTo'],
