@@ -3,6 +3,7 @@ import {
     AccountResponse,
     Asset, FeeBumpTransaction,
     Operation,
+    Server,
     ServerApi,
     StellarTomlResolver,
     Transaction,
@@ -11,6 +12,7 @@ import {
 } from "stellar-sdk";
 import memoize from 'memoizee';
 import assert from "assert";
+import {BigNumber} from "bignumber.js";
 
 const horizonUrls = {
     PUBLIC: 'https://horizon.stellar.org/',
@@ -21,6 +23,8 @@ const stellarExpertUrls = {
     PUBLIC: 'https://stellar.expert/explorer/public/',
     TESTNET: 'https://stellar.expert/explorer/testnet/',
 };
+
+type knownNetworks = 'PUBLIC'|'TESTNET';
 
 const serverUrl = (base: string, path?: string): URL => {
     return new URL(path??'', new URL(base));
@@ -172,6 +176,38 @@ export const verifyTransactionSignaturesForAccount = <T extends FeeBumpTransacti
     })
 };
 
+const assetIsStroopsAsset = async (network: knownNetworks, asset: string): Promise<boolean> => {
+    if (asset === 'native:XLM') {
+        return false;
+    }
+    const showAsStroopKey = 'showAsStroops.'+network;
+    const showAsStroops: () => {[key: string]: boolean} = () => {
+        return JSON.parse(localStorage.getItem(showAsStroopKey)??"{}");
+    };
+
+    if (Object.keys(showAsStroops()).includes(asset)) {
+        return showAsStroops()[asset];
+    } else {
+        const sAsset = getStellarAsset(asset);
+        return new Server(horizonUrls[network]).assets()
+            .forCode(sAsset.getCode()).forIssuer(sAsset.getIssuer())
+            .call()
+            .then(({records}) => records.pop())
+            .then(assetRecord => {
+                const currentAssetAsStroops: {[key: string]: boolean} = JSON.parse(`{"${asset}": false}`);
+                if (assetRecord) {
+                    currentAssetAsStroops[asset] = Object.values(assetRecord.balances)
+                        .map(b => new BigNumber(b))
+                        .reduce((c, p) => p.plus(c), new BigNumber("0"))
+                        .lt(1);
+                }
+                localStorage.setItem(showAsStroopKey, JSON.stringify({...showAsStroops(),  ...currentAssetAsStroops}));
+                return currentAssetAsStroops[asset];
+            })
+            .catch(() => false);
+    }
+};
+
 const StellarHelpers = () => {
     const {usePublicNetwork} = useApplicationState();
 
@@ -185,6 +221,7 @@ const StellarHelpers = () => {
         horizonUrl: horizonUrl,
         getSelectedNetwork,
         tomlAssetInformation: (asset: Asset) => getTomlAssetInformation(horizonUrl, asset),
+        assetIsStroopsAsset: (asset: string) => assetIsStroopsAsset(getSelectedNetwork(), asset),
     };
 };
 export default StellarHelpers;

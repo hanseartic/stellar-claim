@@ -4,7 +4,7 @@ import AccountSelector from '../Components/AccountSelector';
 import useApplicationState from '../useApplicationState';
 import AssetPresenter from '../Components/AssetPresenter';
 import {BigNumber} from 'bignumber.js';
-import StellarHelpers, {getStellarAsset, shortAddress} from '../StellarHelpers';
+import StellarHelpers, {shortAddress} from '../StellarHelpers';
 import {Horizon, Server, ServerApi} from 'stellar-sdk';
 import StellarAddressLink from '../Components/StellarAddressLink';
 import BalanceCard, { AccountBalanceRecord } from "../Components/BalanceCard";
@@ -24,7 +24,7 @@ const balancesTableColumns = [
 ];
 
 export default function AccountOverview() {
-    const {getSelectedNetwork, horizonUrl} = StellarHelpers();
+    const {assetIsStroopsAsset, horizonUrl} = StellarHelpers();
     const {accountInformation} = useApplicationState();
     const [accountBalances, setAccountBalances] = useState<AccountBalanceRecord[]>([]);
     const [accountCreated, setAccountCreated] = useState<{date?: string, by?: string}>({})
@@ -77,29 +77,9 @@ export default function AccountOverview() {
                 if (balance.asset === 'native:XLM') {
                     return balance;
                 }
-                const showAsStroopKey = 'showAsStroops.'+getSelectedNetwork();
-                const showAsStroops: () => {[key: string]: boolean} = () => JSON.parse(localStorage.getItem(showAsStroopKey)??"{}");
-                let showAsStroop = false;
-                if (Object.keys(showAsStroops()).includes(balance.asset)) {
-                    showAsStroop = showAsStroops()[balance.asset];
-                } else {
-                    const asset = await (async () => {
-                        const sAsset = getStellarAsset(balance.asset);
-                        return await new Server(horizonUrl().href).assets()
-                            .forCode(sAsset.getCode()).forIssuer(sAsset.getIssuer())
-                            .call()
-                            .then(({records}) => records.pop());
-                    })();
-                    if (asset) {
-                        showAsStroop = new BigNumber(asset.amount??0).lt(1);
-                        const currentAssetAsStroops: {[key: string]: boolean} = {};
-                        currentAssetAsStroops[balance.asset] = showAsStroop;
-                        localStorage.setItem(showAsStroopKey, JSON.stringify({...showAsStroops(),  ...currentAssetAsStroops}));
-                    }
-                }
                 return {
                     ...balance,
-                    showAsStroop: showAsStroop
+                    showAsStroop: await assetIsStroopsAsset(balance.asset)
                 };
             });
 
