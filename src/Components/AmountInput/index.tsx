@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import {InputProps} from "antd/lib/input/Input";
-import {Input} from "antd";
+import {Input, Tooltip} from "antd";
 import {useEffect, useRef, useState} from "react";
 
 const stroopsRatio = 10000000;
@@ -48,9 +48,9 @@ const AmountInput = (props: AmountInputProps) => {
     const inputRef = useRef<any>(null);
     const [stringValue, setStringValue] = useState("");
     const [cursorPos, setCursorPos] = useState<number|null>(null);
-    const {onChange, value} = props;
+    const {onChange, value, showAsStroops} = props;
     const notifyChange = (val: BigNumber|undefined) => {
-        onChange?.(val?.div(props.showAsStroops?stroopsRatio:1));
+        onChange?.(val?.div(showAsStroops?stroopsRatio:1));
     };
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,19 +91,23 @@ const AmountInput = (props: AmountInputProps) => {
     useEffect(() => {
         setStringValue(prev => {
             const newStringValue = value
-                ?.multipliedBy(props.showAsStroops?stroopsRatio:1)
+                ?.multipliedBy(showAsStroops?stroopsRatio:1)
                 .toFormat(amountFormat)??'';
             return parseFormattedStringValueToBigNumber(prev)?.eq(value??0)
                 ? prev : newStringValue;
         });
-    }, [value, props.showAsStroops]);
+    }, [value, showAsStroops]);
 
     useEffect(() => {
         const inputElement = inputRef.current;
         inputElement.setSelectionRange(cursorPos, cursorPos);
     }, [stringValue, inputRef, cursorPos]);
 
-    return <Input {...props} value={stringValue} onChange={onInputChange} ref={inputRef} />;
+    const input = <Input {...props} value={stringValue} onChange={onInputChange} ref={inputRef} />
+    return <Tooltip trigger={["focus"]}
+                    placement={"bottomLeft"}
+                    title={<>Corresponds to actual value of <br/><code>{value?.toString(10)??"0"}</code></>}
+                    visible={showAsStroops?((value?.gte(0)??false)?undefined:false):false}>{input}</Tooltip>;
 };
 
 export default AmountInput;

@@ -59,7 +59,7 @@ export default function AssetPresenter({code}: AssetProps) {
         <Row align="middle" gutter={2}>
             <Col flex="40px">
                 <Badge
-                    count={isStroopAsset?<img alt="NFT logo" src={nftLogo} height={20} />:0}
+                    count={isStroopAsset?<img alt="NFT logo" src={nftLogo} height={20} title={"An asset with this badge is considered a NFT"} />:0}
                     showZero={false}
                     offset={[-35,35]}>
                     <AssetImage asset={asset} assetInformation={assetInformation} />
