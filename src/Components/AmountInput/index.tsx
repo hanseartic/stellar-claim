@@ -20,16 +20,16 @@ export const formatAmount = (stringAmount: string, asStroop: boolean): string =>
 
 const parseFormattedStringValueToBigNumber = (stringValue: string): BigNumber|undefined => {
     if (stringValue === null) {
-        return;
+        return undefined;
     }
-    const separators = Number(1234.56)
+    const separators = [",", "."]/*Number(1234.56)
         .toLocaleString()
         .replace(/\d+/g,"")
         .split("");
     if (separators.length === 1) {
         separators.unshift('');
     }
-
+    */
     return new BigNumber(String(stringValue)
         .replace(new RegExp(separators[0].replace(/\s/g," "),"g"), "")
         .replace(separators[1],".")
