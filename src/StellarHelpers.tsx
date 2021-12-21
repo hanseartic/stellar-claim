@@ -106,6 +106,7 @@ export const reasonIsSignatureWeightInsufficient = (reason: object): reason is S
 export interface SignatureWeightInsufficient {
     signaturesWeight: number;
     requiredThreshold: number;
+    xdr: string;
 }
 export interface TomlAssetInformation {
     code?: string;
@@ -169,7 +170,7 @@ export const verifyTransactionSignaturesForAccount = <T extends FeeBumpTransacti
 
     return new Promise((y: (v: Transaction) => void, n: (r: SignatureWeightInsufficient) => void) => {
         if (txSignaturesWeight === 0 || txSignaturesWeight < requiredOperationThresholds) {
-            n({signaturesWeight: txSignaturesWeight, requiredThreshold: requiredOperationThresholds} as SignatureWeightInsufficient);
+            n({signaturesWeight: txSignaturesWeight, requiredThreshold: requiredOperationThresholds, xdr: signedTx.toXDR()});
         } else {
             y(signedTx);
         }

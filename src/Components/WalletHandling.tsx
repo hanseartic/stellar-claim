@@ -49,7 +49,8 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
             if (reasonIsSignatureWeightInsufficient(reason)) {
                 notification.error({
                     message: 'Transaction signature weight not sufficient',
-                    description: `The signature's weight (${reason.signaturesWeight}) does not meet the required threshold for this transaction (${reason.requiredThreshold}). Consider using another key for signing. Multisig is not yet supported.`,
+                    description: <>{`The signature's weight (${reason.signaturesWeight}) does not meet the required threshold for this transaction (${reason.requiredThreshold}).`}<br/>
+                    Consider using another key for signing. Multisig is not yet supported.<br/>The XDR is: <code>{reason.xdr}</code></>,
                     duration: 20,
                 });
                 return;
