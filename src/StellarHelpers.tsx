@@ -178,7 +178,7 @@ export const verifyTransactionSignaturesForAccount = <T extends FeeBumpTransacti
 };
 
 const assetIsStroopsAsset = async (network: knownNetworks, asset: string): Promise<boolean> => {
-    if (asset === 'native:XLM') {
+    if (asset === 'native:XLM' || asset === 'native') {
         return false;
     }
     const showAsStroopKey = 'showAsStroops.' + network;
@@ -202,7 +202,8 @@ const assetIsStroopsAsset = async (network: knownNetworks, asset: string): Promi
                         .reduce((c, p) => p.plus(c), new BigNumber("0"))
                         .lt(1);
                 }
-                localStorage.setItem(showAsStroopKey, JSON.stringify({...showAsStroops(),  ...currentAssetAsStroops}));
+                const currentSet = {...showAsStroops(),  ...currentAssetAsStroops};
+                localStorage.setItem(showAsStroopKey, JSON.stringify(currentSet));
                 return currentAssetAsStroops[asset];
             })
             .catch(() => false);

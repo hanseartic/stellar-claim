@@ -170,7 +170,10 @@ export default function ClaimBalances() {
         submitTransaction(unsignedXDR, account, horizonUrl().href, getSelectedNetwork())
             .then(submitTransactionResponse => {
                 if (submitTransactionResponse) {
-                    const tr = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr, 'base64');
+                    if (submitTransactionResponse.vault) {
+                        return;
+                    }
+                    const tr = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr!, 'base64');
                     const proceedings = tr.result().results()
                         .filter(r => r.value().switch().name === 'pathPaymentStrictSend')
                         .map(pp => pp.tr().pathPaymentStrictSendResult().value())

@@ -7,10 +7,11 @@ import axios, {AxiosResponse} from 'axios'
 
 type TransactionFailed = Horizon.ErrorResponseData.TransactionFailed;
 type TransactionResponse = Horizon.TransactionResponse;
+type RealTransactionResponse = (Partial<TransactionResponse & { successful: boolean, vault: boolean }>);
 
 const lobstrMarker = "GA2T6GR7VXXXBETTERSAFETHANSORRYXXXPROTECTEDBYLOBSTRVAULT";
 
-export const submitTransaction = (unsignedXDR: string, account: AccountResponse, serverUrl: string, selectedNetwork: "PUBLIC" | "TESTNET") => {
+export const submitTransaction = (unsignedXDR: string, account: AccountResponse, serverUrl: string, selectedNetwork: "PUBLIC" | "TESTNET"): Promise<RealTransactionResponse|undefined> => {
     const server = new Server(serverUrl);
     return signTransaction(unsignedXDR, selectedNetwork)
         .catch(reason => {
@@ -27,14 +28,13 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
         .then(tx => verifyTransactionSignaturesForAccount(tx , account))
         .then(tx => server.submitTransaction(tx))
         .then(submitTransactionResponse => {
-            type RealTransactionResponse = (TransactionResponse & { successful: boolean });
             return (submitTransactionResponse as RealTransactionResponse);
         })
         .then(submitTransactionResponse => {
             if (submitTransactionResponse.successful) {
                 return submitTransactionResponse;
             }
-            const result = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr, 'base64');
+            const result = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr!, 'base64');
             throw result.result().results();
         })
         .then(submitTransactionResponse => {
@@ -51,21 +51,24 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
             }
             if (reasonIsSignatureWeightInsufficient(reason)) {
                 if (account.signers.find(s => s.key === lobstrMarker && s.weight === 1)) {
-                    axios.post('https://vault.lobstr.co/api/transactions/', { xdr: reason.xdr})
+                    return axios.post('https://vault.lobstr.co/api/transactions/', { xdr: reason.xdr})
                         .then((res: AxiosResponse) => {
-                            console.log(res.status)
-                            if (res.status === 200 || res.status === 204) {
+                            if (res.status === 201) {
                                 notification.info({
                                     message: "Transaction was sent to LOBSTR vault",
                                     description: "The current signature weight was not sufficient. Transaction was send to LOBSTR vault for additional signatures.",
                                     duration: 20,
                                 })
                             }
+                            return {vault: true, successful: true};
                         })
-                        .catch(e => notification.error({
-                            message: "Could not acquire more signatures from LOBSTR vault",
-                            description: e
-                        }));
+                        .catch(e => {
+                            notification.error({
+                                message: "Could not acquire more signatures from LOBSTR vault",
+                                description: e
+                            });
+                            return {vault: true, successful: false};
+                        });
                 } else {
                     notification.error({
                         message: 'Transaction signature weight not sufficient',
