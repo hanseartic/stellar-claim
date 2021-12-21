@@ -3,9 +3,12 @@ import {notification} from "antd";
 import {AccountResponse, Horizon, NetworkError, Networks, Server, TransactionBuilder, xdr} from "stellar-sdk";
 import {reasonIsSignatureWeightInsufficient, verifyTransactionSignaturesForAccount} from "../StellarHelpers";
 import React from "react";
+import axios, {AxiosResponse} from 'axios'
 
 type TransactionFailed = Horizon.ErrorResponseData.TransactionFailed;
 type TransactionResponse = Horizon.TransactionResponse;
+
+const lobstrMarker = "GA2T6GR7VXXXBETTERSAFETHANSORRYXXXPROTECTEDBYLOBSTRVAULT";
 
 export const submitTransaction = (unsignedXDR: string, account: AccountResponse, serverUrl: string, selectedNetwork: "PUBLIC" | "TESTNET") => {
     const server = new Server(serverUrl);
@@ -47,12 +50,31 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
                 return;
             }
             if (reasonIsSignatureWeightInsufficient(reason)) {
-                notification.error({
-                    message: 'Transaction signature weight not sufficient',
-                    description: <>{`The signature's weight (${reason.signaturesWeight}) does not meet the required threshold for this transaction (${reason.requiredThreshold}).`}<br/>
-                    Consider using another key for signing. Multisig is not yet supported.<br/>The XDR is: <code>{reason.xdr}</code></>,
-                    duration: 20,
-                });
+                if (account.signers.find(s => s.key === lobstrMarker && s.weight === 1)) {
+                    axios.post('https://vault.lobstr.co/api/transactions/', { xdr: reason.xdr})
+                        .then((res: AxiosResponse) => {
+                            console.log(res.status)
+                            if (res.status === 200 || res.status === 204) {
+                                notification.info({
+                                    message: "Transaction was sent to LOBSTR vault",
+                                    description: "The current signature weight was not sufficient. Transaction was send to LOBSTR vault for additional signatures.",
+                                    duration: 20,
+                                })
+                            }
+                        })
+                        .catch(e => notification.error({
+                            message: "Could not acquire more signatures from LOBSTR vault",
+                            description: e
+                        }));
+                } else {
+                    notification.error({
+                        message: 'Transaction signature weight not sufficient',
+                        description: <>{`The signature's weight (${reason.signaturesWeight}) does not meet the required threshold for this transaction (${reason.requiredThreshold}).`}<br/>
+                            Consider using another key for signing. Multisig is not yet supported.<br/>The XDR
+                            is: <code>{reason.xdr}</code></>,
+                        duration: 20,
+                    });
+                }
                 return;
             }
 
