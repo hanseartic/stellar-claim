@@ -12,7 +12,7 @@ export default function AssetImage ({asset, assetInformation}: { asset: Asset, a
         if (asset.isNative()) {
             setImageSource(stellarLogo);
         } else if (assetInformation.code?.startsWith('0x')) {
-            setImageSource('https://twemoji.maxcdn.com/v/latest/72x72/'+assetInformation.code?.substring(2).replace(/^0+/g, '')+'.png');
+            setImageSource('https://twemoji.maxcdn.com/v/latest/72x72/'+assetInformation.code?.substring(2).replace(/^0+/g, '').toLowerCase()+'.png');
         } else {
             setImageSource(assetInformation.image);
         }
