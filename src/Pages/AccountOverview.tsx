@@ -72,17 +72,16 @@ export default function AccountOverview() {
                             .minus(reserves),
                         showAsStroop: false
                     };
-                }
-            ).map(async (balance) => {
-                if (balance.asset === 'native:XLM') {
-                    return balance;
-                }
-                return {
-                    ...balance,
-                    showAsStroop: await assetIsStroopsAsset(balance.asset)
-                };
+                })
+                .map(async (balance) => {
+                    if (balance.asset === 'native:XLM') {
+                        return balance;
+                    }
+                    return {
+                        ...balance,
+                        showAsStroop: await assetIsStroopsAsset(balance.asset)
+                    };
             });
-
             Promise.all(accountBalances).then(setAccountBalances);
         } else {
             setAccountBalances([]);
