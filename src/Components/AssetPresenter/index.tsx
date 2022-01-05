@@ -10,9 +10,11 @@ interface AssetProps {
     code: string;
 }
 
+const emojiAssetRegex = /(?:0x[a-z0-9]*(?=0x))|(?:0x[a-z0-9]*$)/ig;
+
 const AssetIssuer = (props: {code: string, issuer: string, domain?: string}) => {
     return (<code>
-            {!!props.domain?<span className='domain-issued-asset'>{props.code}</span>:null}
+            {!!props.domain?<span className='domain-issued-asset'>{props.code}</span>:<></>}
             {!!props.domain
                 ? <a href={new URL('https://'+props.domain).href}
                      target="_blank"
@@ -45,10 +47,11 @@ export default function AssetPresenter({code}: AssetProps) {
         // eslint-disable-next-line
     }, []);
     useEffect(() => {
-        if (assetInformation.code?.startsWith('0x')) {
+        const codepointsMatch = assetInformation.code?.match(emojiAssetRegex);
+        if (null !== codepointsMatch) {
             setAssetInformation(p => ({
                 ...p,
-                code: String.fromCodePoint(Number(p.code)),
+                code: assetInformation.code?.replace(emojiAssetRegex, match => String.fromCodePoint(Number(match))),
             }));
         }
     }, [assetInformation.code]);
