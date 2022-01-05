@@ -9,10 +9,15 @@ import nftLogo from '../../nft.png';
 interface AssetProps {
     code: string;
 }
+interface IssuerProps {
+    code: string,
+    issuer: string,
+    domain?: string,
+}
 
 const emojiAssetRegex = /(?:0x[a-z0-9]*(?=0x))|(?:0x[a-z0-9]*$)/ig;
 
-const AssetIssuer = (props: {code: string, issuer: string, domain?: string}) => {
+const AssetIssuer = (props: IssuerProps) => {
     return (<code>
             {!!props.domain?<span className='domain-issued-asset'>{props.code}</span>:<></>}
             {!!props.domain
@@ -34,6 +39,8 @@ export default function AssetPresenter({code}: AssetProps) {
     });
     const [isStroopAsset, setIsStroopAsset] = useState<boolean>(false);
     const {expertUrl, tomlAssetInformation, assetIsStroopsAsset} = StellarHelpers();
+    const expertLink = expertUrl(`asset/${asset.getCode()}${asset.isNative()?'':'-'+asset.getIssuer()}`).href;
+    const [assetHref, setAssetHref] = useState(expertLink);
 
     useEffect(() => {
         tomlAssetInformation(asset)
@@ -54,10 +61,11 @@ export default function AssetPresenter({code}: AssetProps) {
                 code: assetInformation.code?.replace(emojiAssetRegex, match => String.fromCodePoint(Number(match))),
             }));
         }
-    }, [assetInformation.code]);
+        if (isStroopAsset) {
+            setAssetHref(`https://litemint.com/items/${assetInformation.issuer}/${assetInformation.code}`)
+        }
+    }, [assetInformation.code, assetInformation.domain, assetInformation.issuer, isStroopAsset]);
 
-
-    const assetHref = expertUrl(`asset/${asset.getCode()}${asset.isNative()?'':'-'+asset.getIssuer()}`).href;
     return (
         <Row align="middle" gutter={2}>
             <Col flex="40px">
