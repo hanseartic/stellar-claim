@@ -131,7 +131,7 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams, a
                     return new TransactionCallBuilder(new URI(baseUrl))
                         .forClaimableBalance(record.id)
                         .call()
-                        .then(async ({records: transactionRecords}) => ({
+                        .then(({records: transactionRecords}) => ({
                             ...record,
                             transaction_memo: transactionRecords[0]?.memo,
                             // when there is no time-bound set use the ledger time
@@ -140,8 +140,16 @@ const loadClaimableBalances = async ({baseUrl, onPage, maxItems, searchParams, a
                                 validFrom: record.information?.validFrom
                                     ??new BigNumber(Date.parse(transactionRecords[0].created_at)).idiv(1000).toNumber()
                             }),
-                            showAsStroops: await assetIsStroopsAsset(record.asset)
                         } as ClaimableBalanceRecord))
+                        .catch(() => ({
+                            ...record,
+                            transaction_memo: "Memo could not be loaded",
+                        } as ClaimableBalanceRecord))
+                        .then(r => assetIsStroopsAsset(record.asset)
+                            .then(showAsStroops => ({
+                            ...r,
+                            showAsStroops: showAsStroops,
+                        } as ClaimableBalanceRecord)));
                 })));
 
             const nextCursor = json._links.self.href !== json._links.next.href
