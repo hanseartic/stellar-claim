@@ -30,13 +30,18 @@ const serverUrl = (base: string, path?: string): URL => {
     return new URL(path??'', new URL(base));
 };
 
+const bustTomlCache = async (domain: string) : Promise<{[p: string]: any}> => {
+    await fetch(`https://${domain}/.well-known/stellar.toml`, {cache: "reload"}).catch(console.warn);
+    return StellarTomlResolver.resolve(domain, {allowHttp: false});
+};
+
 export const cachedFetch = memoize(
     (input:string|Request, init?:RequestInit) => fetch(input, init),
     {promise: true});
 export const cachedFetchJson = memoize(
     (input:string|Request, init?:RequestInit) => fetch(input, init).then(r => r.json()),
     {promise: true});
-const cachedResolveToml = memoize(StellarTomlResolver.resolve, {promise: true});
+const cachedResolveToml = memoize(bustTomlCache, {promise: true});
 
 const getTomlAssetInformation = async (url: (path: string) => URL, asset: Asset): Promise<TomlAssetInformation> => {
     if (asset.isNative()) return Promise.reject<NoTomlInformation>({reason: 'native', code: asset.getCode()});
