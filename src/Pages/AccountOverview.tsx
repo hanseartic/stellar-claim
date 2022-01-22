@@ -8,6 +8,7 @@ import StellarHelpers, {shortAddress} from '../StellarHelpers';
 import {Horizon, Server, ServerApi} from 'stellar-sdk';
 import StellarAddressLink from '../Components/StellarAddressLink';
 import BalanceCard, { AccountBalanceRecord } from "../Components/BalanceCard";
+import { AssetRecord } from 'stellar-sdk/lib/types/assets';
 
 type BalanceLine = Exclude<Horizon.BalanceLine, Horizon.BalanceLineLiquidityPool>;
 
@@ -82,7 +83,29 @@ export default function AccountOverview() {
                         showAsStroop: await assetIsStroopsAsset(balance.asset)
                     };
             });
-            Promise.all(accountBalances).then(setAccountBalances);
+            Promise.all(accountBalances)
+              .then(balances => {
+                return new Server(horizonUrl().href).assets()
+                  .forIssuer(accountInformation.account!.id)
+                  .call()
+                  .then(({records}) => (records as (AssetRecord & {liquidity_pools_amount: string})[]).map(r => {
+                    const amount = new BigNumber(Number.MAX_SAFE_INTEGER)
+                      .minus(r.amount)
+                      .minus(r.claimable_balances_amount)
+                      .minus(r.liquidity_pools_amount);
+                    return ({
+                      account: accountInformation.account!,
+                      asset: `${r.asset_code}:${r.asset_issuer}`,
+                      spendable: amount,
+                      balance: amount,
+                      sellingLiabilities: new BigNumber(0),
+                      buyingLiabilities: new BigNumber(0),
+                      showAsStroop: false
+                    })
+                  }))
+                  .then(b => b.concat(balances) as AccountBalanceRecord[]);
+              })
+              .then(setAccountBalances);
         } else {
             setAccountBalances([]);
         }
