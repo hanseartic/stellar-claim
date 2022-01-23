@@ -6,9 +6,7 @@ import { Asset } from 'stellar-sdk';
 
 export default function AssetImage ({asset, assetInformation}: { asset: Asset, assetInformation: TomlAssetInformation }) {
     const [imageSource, setImageSource] = useState(assetInformation.image);
-
     useEffect(() => {
-        if (imageSource !== undefined) return undefined;
         if (asset.isNative()) {
             setImageSource(stellarLogo);
         } else if (assetInformation.code?.startsWith('0x')) {
