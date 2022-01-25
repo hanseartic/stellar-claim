@@ -15,7 +15,7 @@ interface IssuerProps {
     domain?: string,
 }
 
-const emojiAssetRegex = /(?:0x[a-z0-9]*(?=0x))|(?:0x[a-z0-9]*$)/ig;
+const emojiAssetRegex = /(?:0x[a-fA-F0-9]*(?=0x))|(?:0x[a-fA-F0-9]*$)/g;
 
 const AssetIssuer = (props: IssuerProps) => {
     return (<code>
@@ -58,7 +58,7 @@ export default function AssetPresenter({code}: AssetProps) {
         if (null !== codepointsMatch) {
             setAssetInformation(p => ({
                 ...p,
-                code: assetInformation.code?.replace(emojiAssetRegex, match => String.fromCodePoint(Number(match))),
+                code: assetInformation.code?.replace(emojiAssetRegex, match => {try {return String.fromCodePoint(Number(match))} catch(e) {return match}}),
             }));
         }
         if (isStroopAsset) {
