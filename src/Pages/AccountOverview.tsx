@@ -71,15 +71,14 @@ export default function AccountOverview() {
                             .minus(reserves),
                         showAsStroop: false
                     };
-                })
-            ;
-            Promise.all(accountBalances)
-              .then(balances => {
-                return new Server(horizonUrl().href).assets()
-                  .forIssuer(accountInformation.account!.id)
-                  .call()
-                  .then(({records}) => (records as (AssetRecord & {liquidity_pools_amount: string})[])
-                      .map(r => {
+                });
+
+            new Server(horizonUrl().href)
+                .assets()
+                .forIssuer(accountInformation.account!.id)
+                .call()
+                .then(({records}) => (records as (AssetRecord & {liquidity_pools_amount: string})[])
+                    .map(r => {
                         const amount = new BigNumber(Number.MAX_SAFE_INTEGER)
                           .minus(r.amount)
                           .minus(r.claimable_balances_amount)
@@ -95,9 +94,8 @@ export default function AccountOverview() {
                             showAsStroop: false,
                         }) as AccountBalanceRecord
                   }))
-                  .then(b => b.concat(balances) as AccountBalanceRecord[]);
-              })
-              .then(setAccountBalances);
+                .then(b => b.concat(accountBalances) as AccountBalanceRecord[])
+                .then(setAccountBalances);
         } else {
             setAccountBalances([]);
         }
@@ -112,7 +110,6 @@ export default function AccountOverview() {
             columns={balancesTableColumns}
             dataSource={accountBalances}
             rowKey='asset'
-            pagination={false}
         />
     </>);
 };
