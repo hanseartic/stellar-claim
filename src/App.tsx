@@ -15,6 +15,7 @@ import {
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBroadcastTower,
+    faChartBar,
     faHandHolding,
     faIdCard,
     faWallet,
@@ -28,7 +29,7 @@ const { Content, Footer, Header, Sider } = Layout;
 
 
 const App = () => {
-    const { menuCollapsed, setMenuCollapsed, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
+    const { loadMarket, setLoadMarket, menuCollapsed, setMenuCollapsed, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
     const collapseTrigger = react.createElement(
         menuCollapsed?MenuUnfoldOutlined:MenuFoldOutlined, {
             onClick: () => setMenuCollapsed(!menuCollapsed)
@@ -61,7 +62,7 @@ const App = () => {
                 {/*<div><img src={logo} className="App-logo" alt="logo"/></div>*/}
                 <Menu forceSubMenuRender={true} theme="dark" mode="vertical" selectable={false}>
                     <SubMenu title="Stellar Account" key="account" icon={<FontAwesomeIcon icon={faWallet}/>} onTitleClick={goHome}>
-                        <MenuItem title="Account overview" icon={<FontAwesomeIcon icon={faIdCard}/>}  key="account:overview">
+                        <MenuItem title="Account overview" icon={<FontAwesomeIcon icon={faIdCard}/>} key="account:overview">
                             <Link to="/account/">Account overview</Link>
                         </MenuItem>
                         <MenuItem title="Claim Balances" icon={<FontAwesomeIcon icon={faHandHolding}/>} key="account:claim">
@@ -73,6 +74,11 @@ const App = () => {
                             <MenuItem key="settings:toggleNetwork" title="Network" icon={<FontAwesomeIcon icon={faBroadcastTower}/>} onClick={({domEvent}) => domEvent.preventDefault()}>
                                 <ToggleSwitch checkedChildren="Public" unCheckedChildren="Testnet" onChange={setUsePublicNetwork} checked={usePublicNetwork}/>
                             </MenuItem>
+                        </Menu.ItemGroup>
+                        <Menu.ItemGroup title="Load market demand">
+                            <Menu.Item key="settings:loadMarkets" title="Load market for balances" icon={<FontAwesomeIcon icon={faChartBar}/>} onClick={({domEvent}) => domEvent.preventDefault()}>
+                                <ToggleSwitch checkedChildren="yes" unCheckedChildren="no" onChange={setLoadMarket} checked={loadMarket}/>
+                            </Menu.Item>
                         </Menu.ItemGroup>
                     </SubMenu>
                     <MenuItem title="About this page" key="about" icon={<InfoCircleOutlined />}>

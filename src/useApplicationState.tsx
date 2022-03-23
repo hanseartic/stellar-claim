@@ -10,8 +10,9 @@ export interface ApplicationState extends ApplicationContextState {
     setBalancesClaiming: (balancesClaiming: boolean) => void;
     setBalancesLoading: (balancesLoading: boolean) => void;
     setClaimBalancesXDR: (claimBalancesXDR: string) => void;
-    setSelectedBalances: (selectedBalances: ClaimableBalanceRecord[]) => void;
+    setLoadMarket: (loadMarket: boolean) => void;
     setMenuCollapsed: (menuCollapsed: boolean) => void;
+    setSelectedBalances: (selectedBalances: ClaimableBalanceRecord[]) => void;
     setUsePublicNetwork: (usePublicNetwork: boolean) => void;
 }
 
@@ -38,8 +39,11 @@ const useApplicationState: () => ApplicationState = () => {
     function setBalancesLoading(balancesLoading: boolean) {
         setState(state => ({...state, balancesLoading}));
     }
-    function setClaimBalancesXDR (claimBalancesXDR: string) {
+    function setClaimBalancesXDR(claimBalancesXDR: string) {
         setState(state => ({...state, claimBalancesXDR}))
+    }
+    function setLoadMarket(loadMarket: boolean) {
+        setState(state => ({...state, loadMarket}))
     }
     function setMenuCollapsed(menuCollapsed: boolean) {
         setState(state => ({...state, menuCollapsed}));
@@ -58,6 +62,7 @@ const useApplicationState: () => ApplicationState = () => {
         setBalancesClaiming,
         setBalancesLoading,
         setClaimBalancesXDR,
+        setLoadMarket,
         setMenuCollapsed,
         setSelectedBalances,
         setUsePublicNetwork,

@@ -15,6 +15,7 @@ interface ApplicationState {
     balancesLoading: boolean;
     claimBalancesXDR?: string;
     donate: number;
+    loadMarket: boolean;
     menuCollapsed: boolean;
     selectedBalances: ClaimableBalanceRecord[];
     usePublicNetwork: boolean;
@@ -27,6 +28,7 @@ const defaultState: ApplicationState = {
     balancesClaiming: false,
     balancesLoading: false,
     donate: 0,
+    loadMarket: false,
     menuCollapsed: true,
     usePublicNetwork: true,
     selectedBalances: [],
@@ -37,10 +39,12 @@ const ApplicationContextProvider = (props: ApplicationContextProps) => {
     const usePublicNetwork = !!JSON.parse(localStorage.getItem('usePublicNetwork')??'true');
     const menuCollapsed = !!JSON.parse(localStorage.getItem('menuCollapsed')??'true');
     const autoRemoveTrustlines = !!JSON.parse(localStorage.getItem('autoRemoveTrustlines')??'true');
+    const loadMarket = !!JSON.parse(localStorage.getItem('loadMarket')??'false');
 
     const [ state, setState ] = useState<ApplicationState>({
         ...defaultState,
         menuCollapsed: menuCollapsed,
+        loadMarket: loadMarket,
         usePublicNetwork: usePublicNetwork,
         autoRemoveTrustlines: autoRemoveTrustlines,
     });
@@ -48,8 +52,9 @@ const ApplicationContextProvider = (props: ApplicationContextProps) => {
     useEffect(() => {
         localStorage.setItem('usePublicNetwork', state.usePublicNetwork?'true':'false');
         localStorage.setItem('menuCollapsed', state.menuCollapsed?'true':'false');
+        localStorage.setItem('loadMarket', state.loadMarket?'true':'false');
         localStorage.setItem('autoRemoveTrustlines', state.autoRemoveTrustlines?'true':'false');
-    }, [state.usePublicNetwork, state.menuCollapsed, state.autoRemoveTrustlines]);
+    }, [state.usePublicNetwork, state.menuCollapsed, state.loadMarket, state.autoRemoveTrustlines]);
 
     return (
         <ApplicationContext.Provider value={[state, setState]} children={props.children} />

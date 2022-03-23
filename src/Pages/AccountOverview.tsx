@@ -25,8 +25,8 @@ const balancesTableColumns = [
 ];
 
 export default function AccountOverview() {
-    const {assetIsStroopsAsset, horizonUrl} = StellarHelpers();
-    const {accountInformation} = useApplicationState();
+    const {horizonUrl} = StellarHelpers();
+    const {accountInformation, loadMarket} = useApplicationState();
     const [accountBalances, setAccountBalances] = useState<AccountBalanceRecord[]>([]);
     const [accountCreated, setAccountCreated] = useState<{date?: string, by?: string}>({})
 
@@ -47,9 +47,7 @@ export default function AccountOverview() {
                 .catch(() => setAccountCreated({}));
 
             const accountBalances = accountInformation.account?.balances
-                .filter((b): b is BalanceLine =>
-                    b.asset_type !== 'liquidity_pool_shares'
-                )
+                .filter((b): b is BalanceLine => b.asset_type !== 'liquidity_pool_shares')
                 .map((balanceLine) => {
                     let reserves = new BigNumber(0);
                     if (balanceLine.asset_type === 'native') {
@@ -74,23 +72,14 @@ export default function AccountOverview() {
                         showAsStroop: false
                     };
                 })
-                .map(async (balance) => {
-                    if (balance.asset === 'native:XLM') {
-                        return balance;
-                    }
-                    return {
-                        ...balance,
-                        showAsStroop: await assetIsStroopsAsset(balance.asset)
-                    };
-                })
             ;
             Promise.all(accountBalances)
               .then(balances => {
                 return new Server(horizonUrl().href).assets()
                   .forIssuer(accountInformation.account!.id)
                   .call()
-                  .then(({records}) => Promise.all((records as (AssetRecord & {liquidity_pools_amount: string})[])
-                      .map(async r => {
+                  .then(({records}) => (records as (AssetRecord & {liquidity_pools_amount: string})[])
+                      .map(r => {
                         const amount = new BigNumber(Number.MAX_SAFE_INTEGER)
                           .minus(r.amount)
                           .minus(r.claimable_balances_amount)
@@ -103,9 +92,9 @@ export default function AccountOverview() {
                             balance: amount,
                             sellingLiabilities: new BigNumber(0),
                             buyingLiabilities: new BigNumber(0),
-                            showAsStroop: await assetIsStroopsAsset(accountIssuedAsset),
+                            showAsStroop: false,
                         }) as AccountBalanceRecord
-                  })))
+                  }))
                   .then(b => b.concat(balances) as AccountBalanceRecord[]);
               })
               .then(setAccountBalances);
@@ -113,7 +102,7 @@ export default function AccountOverview() {
             setAccountBalances([]);
         }
         // eslint-disable-next-line
-    }, [accountInformation.account]);
+    }, [accountInformation.account, loadMarket]);
 
     return (<>
         <AccountSelector />

@@ -119,9 +119,11 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const {
         accountInformation, setAccountInformation,
         autoRemoveTrustlines, setAutoRemoveTrustlines,
+        loadMarket
     } = useApplicationState();
-    const {getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
+    const {assetIsStroopsAsset, getSelectedNetwork, horizonUrl: fnHorizonUrl} = StellarHelpers();
     const [assetDemand, setAssetDemand] = useState(new BigNumber(0));
+    const [showAsStroop, setShowAsStroop] = useState(false);
     const [burnRemovePopoverVisible, setBurnRemovePopoverVisible] = useState(false);
     const [canBurn, setCanBurn] = useState(false);
     const [canRemoveTrust, setCanRemoveTrust] = useState(false);
@@ -371,9 +373,9 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         <Space direction={"vertical"} style={{width: 625}} >
             <AmountInput
                 allowClear
-                showAsStroops={balanceRecord.showAsStroop}
+                showAsStroops={showAsStroop}
                 onChange={amount => setSendAmount(amount)}
-                placeholder={formatAmount(getSpendable(balanceRecord.spendable).toString(), balanceRecord.showAsStroop)}
+                placeholder={formatAmount(getSpendable(balanceRecord.spendable).toString(), showAsStroop)}
                 addonBefore={<Tooltip placement={"topLeft"} overlay='Enter the amount to send. The placeholder will show the spendable amount.'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
                 addonAfter={<Tooltip placement={"topRight"} overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
                     setSendAmount(getSpendable(balanceRecord.spendable))
@@ -519,7 +521,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     }
     useEffect(() => {
         const validAccounts = destinationAccounts.filter(a => a.state === 'found');
-        if (validAccounts.filter(a => a.state === 'found').length > 0) {
+        if (validAccounts.length > 0) {
             const asset = getStellarAsset(balanceRecord.asset);
             const sendSelf = validAccounts.some(a => a.id === accountInformation.account?.accountId());
             const shouldBurn = validAccounts.every(a => a.id === asset.getIssuer());
@@ -630,7 +632,15 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         setIsBurn(isBurn&&!sendAmountInvalid)
     }, [isBurn, sendAmountInvalid])
     useEffect(() => {
-        if (balanceRecord.asset !== 'native:XLM') {
+        setCanBurn(!balanceRecord.spendable.isZero());
+        setCanRemoveTrust(balanceRecord.spendable.isZero()
+            && balanceRecord.balance.isZero()
+        );
+        assetIsStroopsAsset(balanceRecord.asset).then(setShowAsStroop)
+        // eslint-disable-next-line
+    }, []);
+    useEffect(() => {
+        if (balanceRecord.asset !== 'native:XLM' && loadMarket) {
             new OfferCallBuilder(new URI(horizonUrl))
                 .buying(getStellarAsset(balanceRecord.asset))
                 .limit(200)
@@ -638,12 +648,8 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 .then(collect)
                 .then(demand => setAssetDemand(demand.decimalPlaces(demand.isLessThan(1)?7:0)))
         }
-        setCanBurn(!balanceRecord.spendable.isZero());
-        setCanRemoveTrust(balanceRecord.spendable.isZero()
-            && balanceRecord.balance.isZero()
-        );
         // eslint-disable-next-line
-    }, []);
+    }, [loadMarket]);
 
     let askOffset = 25;
     let bidOffset = 25;
@@ -656,18 +662,18 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         <Badge.Ribbon
             color='red'
             style={{display: (balanceRecord.sellingLiabilities.isZero()?"none":""), marginTop: bidOffset}}
-            text={balanceRecord.sellingLiabilities.isZero()?'':`Bid: ${formatAmount(balanceRecord.sellingLiabilities.toString(), balanceRecord.showAsStroop)}`}>
+            text={balanceRecord.sellingLiabilities.isZero()?'':`Bid: ${formatAmount(balanceRecord.sellingLiabilities.toString(), showAsStroop)}`}>
             <Badge.Ribbon
                 color='lime'
                 style={{marginTop: askOffset, display: (balanceRecord.buyingLiabilities.isZero()?"none":"")}}
-                text={balanceRecord.buyingLiabilities.isZero()?'':`Ask: ${formatAmount(balanceRecord.buyingLiabilities.toString(), balanceRecord.showAsStroop)}`}>
+                text={balanceRecord.buyingLiabilities.isZero()?'':`Ask: ${formatAmount(balanceRecord.buyingLiabilities.toString(), showAsStroop)}`}>
                 <Badge.Ribbon
                     color='blue'
                     style={{display: (assetDemand.isZero()?"none":""), marginTop: 25}}
-                    text={assetDemand.isZero()?'':`Demand: ${formatAmount(assetDemand.toString(), balanceRecord.showAsStroop)}`} >
-                <Card size='small' title={formatAmount(balanceRecord.spendable.toString(), balanceRecord.showAsStroop) + ' spendable'}>
-                    <p>{formatAmount(balanceRecord.balance.minus(balanceRecord.spendable).toString(), balanceRecord.showAsStroop)} reserved</p>
-                    <b>{formatAmount(balanceRecord.balance.toString(), balanceRecord.showAsStroop)} total</b>
+                    text={assetDemand.isZero()?'':`Demand: ${formatAmount(assetDemand.toString(), showAsStroop)}`} >
+                <Card size='small' title={formatAmount(balanceRecord.spendable.toString(), showAsStroop) + ' spendable'}>
+                    <p>{formatAmount(balanceRecord.balance.minus(balanceRecord.spendable).toString(), showAsStroop)} reserved</p>
+                    <b>{formatAmount(balanceRecord.balance.toString(), showAsStroop)} total</b>
                 </Card>
             </Badge.Ribbon></Badge.Ribbon></Badge.Ribbon>
         <Row><Col flex={1}><Popover
