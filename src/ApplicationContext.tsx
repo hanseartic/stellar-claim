@@ -4,7 +4,6 @@ import {SelectedAccountInformation} from './Components/AccountSelector';
 
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
-
 interface ApplicationContextProps {
     children?: ReactNode;
 }
@@ -13,6 +12,7 @@ interface ApplicationState {
     autoRemoveTrustlines: boolean;
     balancesClaiming: boolean;
     balancesLoading: boolean;
+    showBalancesPagination: boolean;
     claimBalancesXDR?: string;
     donate: number;
     loadMarket: boolean;
@@ -27,6 +27,7 @@ const defaultState: ApplicationState = {
     autoRemoveTrustlines: true,
     balancesClaiming: false,
     balancesLoading: false,
+    showBalancesPagination: true,
     donate: 0,
     loadMarket: false,
     menuCollapsed: true,
@@ -40,13 +41,15 @@ const ApplicationContextProvider = (props: ApplicationContextProps) => {
     const menuCollapsed = !!JSON.parse(localStorage.getItem('menuCollapsed')??'true');
     const autoRemoveTrustlines = !!JSON.parse(localStorage.getItem('autoRemoveTrustlines')??'true');
     const loadMarket = !!JSON.parse(localStorage.getItem('loadMarket')??'false');
+    const showBalancesPagination = !!JSON.parse(localStorage.getItem('showBalancesPagination')??'true');
 
     const [ state, setState ] = useState<ApplicationState>({
         ...defaultState,
-        menuCollapsed: menuCollapsed,
-        loadMarket: loadMarket,
-        usePublicNetwork: usePublicNetwork,
         autoRemoveTrustlines: autoRemoveTrustlines,
+        showBalancesPagination: showBalancesPagination,
+        loadMarket: loadMarket,
+        menuCollapsed: menuCollapsed,
+        usePublicNetwork: usePublicNetwork,
     });
 
     useEffect(() => {
@@ -54,7 +57,8 @@ const ApplicationContextProvider = (props: ApplicationContextProps) => {
         localStorage.setItem('menuCollapsed', state.menuCollapsed?'true':'false');
         localStorage.setItem('loadMarket', state.loadMarket?'true':'false');
         localStorage.setItem('autoRemoveTrustlines', state.autoRemoveTrustlines?'true':'false');
-    }, [state.usePublicNetwork, state.menuCollapsed, state.loadMarket, state.autoRemoveTrustlines]);
+        localStorage.setItem('showBalancesPagination', state.showBalancesPagination?'true':'false');
+    }, [state.usePublicNetwork, state.menuCollapsed, state.loadMarket, state.showBalancesPagination, state.autoRemoveTrustlines]);
 
     return (
         <ApplicationContext.Provider value={[state, setState]} children={props.children} />

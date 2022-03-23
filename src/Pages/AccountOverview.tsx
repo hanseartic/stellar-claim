@@ -1,4 +1,4 @@
-import {Table} from 'antd';
+import {Table, TablePaginationConfig} from 'antd';
 import React, {useEffect, useState} from 'react';
 import AccountSelector from '../Components/AccountSelector';
 import useApplicationState from '../useApplicationState';
@@ -26,9 +26,9 @@ const balancesTableColumns = [
 
 export default function AccountOverview() {
     const {horizonUrl} = StellarHelpers();
-    const {accountInformation, loadMarket} = useApplicationState();
+    const {accountInformation, showBalancesPagination, loadMarket} = useApplicationState();
     const [accountBalances, setAccountBalances] = useState<AccountBalanceRecord[]>([]);
-    const [accountCreated, setAccountCreated] = useState<{date?: string, by?: string}>({})
+    const [accountCreated, setAccountCreated] = useState<{date?: string, by?: string}>({});
 
     useEffect(() => {
 
@@ -102,6 +102,8 @@ export default function AccountOverview() {
         // eslint-disable-next-line
     }, [accountInformation.account, loadMarket]);
 
+    const paginationConfig = { position: ['bottomCenter'], defaultPageSize: 10, hideOnSinglePage: true, } as TablePaginationConfig
+
     return (<>
         <AccountSelector />
         <>Account {shortAddress(accountInformation.account?.id??'', 9)} created on {accountCreated.date} by <StellarAddressLink id={accountCreated.by} length={9} /></>
@@ -110,6 +112,7 @@ export default function AccountOverview() {
             columns={balancesTableColumns}
             dataSource={accountBalances}
             rowKey='asset'
+            pagination={showBalancesPagination ? paginationConfig : false}
         />
     </>);
 };

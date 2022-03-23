@@ -6,16 +6,17 @@ import {About, AccountOverview, ClaimBalances, Privacy} from './Pages';
 import {ApplicationContextProvider} from './ApplicationContext';
 import useApplicationState from './useApplicationState';
 import {
+    BarChartOutlined,
     InfoCircleOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
     SafetyOutlined,
     SettingOutlined,
+    TableOutlined,
 } from '@ant-design/icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faBroadcastTower,
-    faChartBar,
     faHandHolding,
     faIdCard,
     faWallet,
@@ -27,9 +28,8 @@ import {AccountState} from "./Components/AccountSelector";
 const { Item: MenuItem, SubMenu } = Menu;
 const { Content, Footer, Header, Sider } = Layout;
 
-
 const App = () => {
-    const { loadMarket, setLoadMarket, menuCollapsed, setMenuCollapsed, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
+    const { showBalancesPagination, setShowBalancesPagination, loadMarket, setLoadMarket, menuCollapsed, setMenuCollapsed, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
     const collapseTrigger = react.createElement(
         menuCollapsed?MenuUnfoldOutlined:MenuFoldOutlined, {
             onClick: () => setMenuCollapsed(!menuCollapsed)
@@ -75,9 +75,12 @@ const App = () => {
                                 <ToggleSwitch checkedChildren="Public" unCheckedChildren="Testnet" onChange={setUsePublicNetwork} checked={usePublicNetwork}/>
                             </MenuItem>
                         </Menu.ItemGroup>
-                        <Menu.ItemGroup title="Load market demand">
-                            <Menu.Item key="settings:loadMarkets" title="Load market for balances" icon={<FontAwesomeIcon icon={faChartBar}/>} onClick={({domEvent}) => domEvent.preventDefault()}>
-                                <ToggleSwitch checkedChildren="yes" unCheckedChildren="no" onChange={setLoadMarket} checked={loadMarket}/>
+                        <Menu.ItemGroup title="Account overview">
+                            <Menu.Item key="settings:loadMarkets" title="Load market for balances" icon={<BarChartOutlined />} prefix={"Market"} onClick={({domEvent}) => domEvent.preventDefault()}>
+                                <ToggleSwitch checkedChildren="show demand" unCheckedChildren="no demand" onChange={setLoadMarket} checked={loadMarket}/>
+                            </Menu.Item>
+                            <Menu.Item key="settings:paginateBalances" title="Paginate balances list" icon={<TableOutlined />} onClick={({domEvent}) => domEvent.preventDefault()}>
+                                <ToggleSwitch checkedChildren="paginate" unCheckedChildren="show all" onChange={setShowBalancesPagination} checked={showBalancesPagination}/>
                             </Menu.Item>
                         </Menu.ItemGroup>
                     </SubMenu>

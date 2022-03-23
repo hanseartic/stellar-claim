@@ -9,6 +9,7 @@ export interface ApplicationState extends ApplicationContextState {
     setAutoRemoveTrustlines: (autoRemoveTrustlines: boolean) => void;
     setBalancesClaiming: (balancesClaiming: boolean) => void;
     setBalancesLoading: (balancesLoading: boolean) => void;
+    setShowBalancesPagination: (showBalancesPagination: boolean) => void;
     setClaimBalancesXDR: (claimBalancesXDR: string) => void;
     setLoadMarket: (loadMarket: boolean) => void;
     setMenuCollapsed: (menuCollapsed: boolean) => void;
@@ -39,6 +40,9 @@ const useApplicationState: () => ApplicationState = () => {
     function setBalancesLoading(balancesLoading: boolean) {
         setState(state => ({...state, balancesLoading}));
     }
+    function setShowBalancesPagination(showBalancesPagination: boolean) {
+        setState(state => ({...state, showBalancesPagination}));
+    }
     function setClaimBalancesXDR(claimBalancesXDR: string) {
         setState(state => ({...state, claimBalancesXDR}))
     }
@@ -61,6 +65,7 @@ const useApplicationState: () => ApplicationState = () => {
         setAutoRemoveTrustlines,
         setBalancesClaiming,
         setBalancesLoading,
+        setShowBalancesPagination,
         setClaimBalancesXDR,
         setLoadMarket,
         setMenuCollapsed,
