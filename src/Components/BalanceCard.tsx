@@ -21,7 +21,7 @@ import {
     SendOutlined,
     SyncOutlined,
 } from "@ant-design/icons";
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {
     faBalanceScaleLeft,
     faCoins,
@@ -32,7 +32,7 @@ import {
     faUnlink,
     faCommentDots,
     faDumpsterFire,
-} from '@fortawesome/free-solid-svg-icons';
+} from "@fortawesome/free-solid-svg-icons";
 import React, {useEffect, useState} from "react";
 import {
     AccountResponse,
@@ -54,10 +54,10 @@ import StellarHelpers, {getStellarAsset, shortAddress} from "../StellarHelpers";
 import useApplicationState from "../useApplicationState";
 import {submitTransaction} from "./WalletHandling";
 import moment from "moment";
-import { RangeValue } from 'rc-picker/lib/interface';
+import runes from "runes";
+import { RangeValue } from "rc-picker/lib/interface";
 import EmojiInput, {emojiShortcodeMatch} from "./EmojiInput";
-import runes from 'runes';
-import AmountInput, {formatAmount} from "./AmountInput";
+import {AmountInput, formatAmount} from "./AssetAmount/";
 
 type BalanceLine = Horizon.BalanceLine;
 type BalanceLineAsset = Horizon.BalanceLineAsset;

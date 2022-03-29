@@ -2,41 +2,8 @@ import BigNumber from "bignumber.js";
 import {InputProps} from "antd/lib/input/Input";
 import {Input, Tooltip} from "antd";
 import {useEffect, useRef, useState} from "react";
+import {amountFormat, parseFormattedStringValueToBigNumber, stroopsRatio} from ".";
 
-const stroopsRatio = 10000000;
-export const amountFormat = {
-    fractionGroupSeparator: ' ',
-    fractionGroupSize: 3,
-    groupSeparator: ',',
-    groupSize: 3,
-    decimalSeparator: '.'
-};
-
-export const formatAmount = (stringAmount: string, asStroop: boolean): string =>
-    parseFormattedStringValueToBigNumber(stringAmount)
-        ?.multipliedBy(asStroop?stroopsRatio:1)
-        .toFormat(amountFormat)
-    ??'';
-
-const parseFormattedStringValueToBigNumber = (stringValue: string): BigNumber|undefined => {
-    if (stringValue === null) {
-        return undefined;
-    }
-    const separators = [",", "."]/*Number(1234.56)
-        .toLocaleString()
-        .replace(/\d+/g,"")
-        .split("");
-    if (separators.length === 1) {
-        separators.unshift('');
-    }
-    */
-    return new BigNumber(String(stringValue)
-        .replace(new RegExp(separators[0].replace(/\s/g," "),"g"), "")
-        .replace(separators[1],".")
-        .replace(/[\s   ]/g, "")
-    )
-        .decimalPlaces(7, BigNumber.ROUND_HALF_CEIL);
-};
 
 interface AmountInputProps extends Omit<InputProps, "onChange"|"value"> {
     onChange?: (value: BigNumber|undefined) => void,

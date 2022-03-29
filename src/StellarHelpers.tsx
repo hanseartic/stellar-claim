@@ -10,9 +10,10 @@ import {
     Utils,
     xdr
 } from "stellar-sdk";
-import memoize from 'memoizee';
+import memoize from "memoizee";
 import assert from "assert";
 import {BigNumber} from "bignumber.js";
+import {useEffect, useState} from "react";
 
 const horizonUrls = {
     PUBLIC: 'https://horizon.stellar.org/',
@@ -181,13 +182,13 @@ export const verifyTransactionSignaturesForAccount = <T extends FeeBumpTransacti
         }
     })
 };
-
+type showAsStroopsMap = {[key: string]: boolean};
 const assetIsStroopsAsset = async (network: knownNetworks, asset: string): Promise<boolean> => {
     if (asset === 'native:XLM' || asset === 'native') {
         return false;
     }
     const showAsStroopKey = 'showAsStroops.' + network;
-    const showAsStroops: () => {[key: string]: boolean} = () => {
+    const showAsStroops: () => showAsStroopsMap = (): showAsStroopsMap => {
         return JSON.parse(localStorage.getItem(showAsStroopKey)??"{}");
     };
 
@@ -215,10 +216,20 @@ const assetIsStroopsAsset = async (network: knownNetworks, asset: string): Promi
     }
 };
 
+export const useAssetIsStroopsAsset = (asset: string): boolean => {
+    const [isStroops, setIsStroops] = useState(false);
+    const {usePublicNetwork} = useApplicationState();
+    useEffect(() => {
+        assetIsStroopsAsset(usePublicNetwork?'PUBLIC':'TESTNET', asset)
+            .then(setIsStroops);
+    }, [usePublicNetwork, asset]);
+    return isStroops;
+};
+
 const StellarHelpers = () => {
     const {usePublicNetwork} = useApplicationState();
 
-    const getSelectedNetwork = () => usePublicNetwork?'PUBLIC':'TESTNET';
+    const getSelectedNetwork = (): knownNetworks => usePublicNetwork?'PUBLIC':'TESTNET';
 
     const expertUrl = (path?: string) => serverUrl(stellarExpertUrls[getSelectedNetwork()], path);
     const horizonUrl = (path?: string) => serverUrl(horizonUrls[getSelectedNetwork()], path);
