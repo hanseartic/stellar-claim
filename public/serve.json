@@ -1,0 +1,23 @@
+{
+  "headers": [
+    {
+      "source" : "VERSION",
+      "headers" : [
+        {
+          "key" : "Cache-Control",
+          "value" : "no-cache"
+        },
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=UTF-8"
+        },
+        {
+          "key": "etag", "value": "true"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "!VERSION", "destination":  "/index.html" }
+  ]
+}

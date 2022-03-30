@@ -6,6 +6,7 @@ import {About, AccountOverview, ClaimBalances, Privacy} from './Pages';
 import {ApplicationContextProvider} from './ApplicationContext';
 import useApplicationState from './useApplicationState';
 import {
+    ApiOutlined,
     BarChartOutlined,
     InfoCircleOutlined,
     MenuFoldOutlined,
@@ -24,6 +25,7 @@ import {
 
 import {Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
 import {AccountState} from "./Components/AccountSelector";
+import AppVersion from "./Pages/AppVersion";
 
 const { Item: MenuItem, SubMenu } = Menu;
 const { Content, Footer, Header, Sider } = Layout;
@@ -89,6 +91,9 @@ const App = () => {
                     </MenuItem>
                     <MenuItem title="Privacy information" key="privacy" icon={<SafetyOutlined />}>
                         <Link to="/privacy">Privacy</Link>
+                    </MenuItem>
+                    <MenuItem title={"App Version"} key="app:version" icon={<ApiOutlined />}>
+                        <AppVersion />
                     </MenuItem>
                 </Menu>
             </Sider>
