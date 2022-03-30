@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import {InputProps} from "antd/lib/input/Input";
 import {Input, Tooltip} from "antd";
 import {useEffect, useRef, useState} from "react";
-import {amountFormat, parseFormattedStringValueToBigNumber, stroopsRatio} from ".";
+import {amountFormat, formatAmount, parseFormattedStringValueToBigNumber, stroopsRatio} from ".";
 
 
 interface AmountInputProps extends Omit<InputProps, "onChange"|"value"> {
@@ -15,7 +15,7 @@ const AmountInput = (props: AmountInputProps) => {
     const inputRef = useRef<any>(null);
     const [stringValue, setStringValue] = useState("");
     const [cursorPos, setCursorPos] = useState<number|null>(null);
-    const {onChange, value, showAsStroops} = props;
+    const {onChange, value, showAsStroops, placeholder} = props;
     const notifyChange = (val: BigNumber|undefined) => {
         onChange?.(val?.div(showAsStroops?stroopsRatio:1));
     };
@@ -70,7 +70,11 @@ const AmountInput = (props: AmountInputProps) => {
         inputElement.setSelectionRange(cursorPos, cursorPos);
     }, [stringValue, inputRef, cursorPos]);
 
-    const input = <Input {...props} value={stringValue} onChange={onInputChange} ref={inputRef} />
+    const input = <Input {...props}
+                         value={stringValue}
+                         onChange={onInputChange}
+                         placeholder={formatAmount(placeholder??"", showAsStroops??false)}
+                         ref={inputRef} />
     return <Tooltip trigger={["focus"]}
                     placement={"bottomLeft"}
                     title={<>Corresponds to actual value of <br/><code>{value?.toString(10)??"0"}</code></>}

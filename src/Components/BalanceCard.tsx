@@ -57,7 +57,7 @@ import moment from "moment";
 import runes from "runes";
 import { RangeValue } from "rc-picker/lib/interface";
 import EmojiInput, {emojiShortcodeMatch} from "./EmojiInput";
-import {AmountInput, formatAmount} from "./AssetAmount/";
+import AssetAmount, {AmountInput} from "./AssetAmount/";
 
 type BalanceLine = Horizon.BalanceLine;
 type BalanceLineAsset = Horizon.BalanceLineAsset;
@@ -375,7 +375,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 allowClear
                 showAsStroops={showAsStroop}
                 onChange={amount => setSendAmount(amount)}
-                placeholder={formatAmount(getSpendable(balanceRecord.spendable).toString(), showAsStroop)}
+                placeholder={getSpendable(balanceRecord.spendable).toString()}
                 addonBefore={<Tooltip placement={"topLeft"} overlay='Enter the amount to send. The placeholder will show the spendable amount.'><FontAwesomeIcon icon={faCoins} /></Tooltip>}
                 addonAfter={<Tooltip placement={"topRight"} overlay='Send all spendable funds'><FontAwesomeIcon icon={faBalanceScaleLeft} onClick={() =>
                     setSendAmount(getSpendable(balanceRecord.spendable))
@@ -658,22 +658,24 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         askOffset += 30;
     }
     if (!balanceRecord.sellingLiabilities.isZero()) askOffset += 30;
+    const ribbonAmount = (prefix: string, amount: BigNumber) =>
+        <>{prefix} <AssetAmount amount={amount.toString()} asset={balanceRecord.asset}/></>
     return (<>
         <Badge.Ribbon
             color='red'
             style={{display: (balanceRecord.sellingLiabilities.isZero()?"none":""), marginTop: bidOffset}}
-            text={balanceRecord.sellingLiabilities.isZero()?'':`Bid: ${formatAmount(balanceRecord.sellingLiabilities.toString(), showAsStroop)}`}>
+            text={balanceRecord.sellingLiabilities.isZero()?'':ribbonAmount("Bid:", balanceRecord.sellingLiabilities)}>
             <Badge.Ribbon
                 color='lime'
                 style={{marginTop: askOffset, display: (balanceRecord.buyingLiabilities.isZero()?"none":"")}}
-                text={balanceRecord.buyingLiabilities.isZero()?'':`Ask: ${formatAmount(balanceRecord.buyingLiabilities.toString(), showAsStroop)}`}>
+                text={balanceRecord.buyingLiabilities.isZero()?'':ribbonAmount("Ask:", balanceRecord.buyingLiabilities)}>
                 <Badge.Ribbon
                     color='blue'
                     style={{display: (assetDemand.isZero()?"none":""), marginTop: 25}}
-                    text={assetDemand.isZero()?'':`Demand: ${formatAmount(assetDemand.toString(), showAsStroop)}`} >
-                <Card size='small' title={formatAmount(balanceRecord.spendable.toString(), showAsStroop) + ' spendable'}>
-                    <p>{formatAmount(balanceRecord.balance.minus(balanceRecord.spendable).toString(), showAsStroop)} reserved</p>
-                    <b>{formatAmount(balanceRecord.balance.toString(), showAsStroop)} total</b>
+                    text={assetDemand.isZero()?'':ribbonAmount("Demand:", assetDemand)} >
+                <Card size='small' title={<><AssetAmount amount={balanceRecord.spendable.toString()} asset={balanceRecord.asset} /> spendable</>}>
+                    <p><AssetAmount amount={balanceRecord.balance.minus(balanceRecord.spendable).toString()} asset={balanceRecord.asset} /> reserved</p>
+                    <b><AssetAmount amount={balanceRecord.balance.toString()} asset={balanceRecord.asset} /> total</b>
                 </Card>
             </Badge.Ribbon></Badge.Ribbon></Badge.Ribbon>
         <Row><Col flex={1}><Popover
