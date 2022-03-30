@@ -8,6 +8,7 @@ import useApplicationState from './useApplicationState';
 import {
     ApiOutlined,
     BarChartOutlined,
+    CloudDownloadOutlined,
     InfoCircleOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
@@ -23,9 +24,9 @@ import {
     faWallet,
 } from '@fortawesome/free-solid-svg-icons';
 
-import {Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
+import {Badge, Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
 import {AccountState} from "./Components/AccountSelector";
-import AppVersion from "./Pages/AppVersion";
+import AppVersion, {useUpdateAvailable} from "./Pages/AppVersion";
 
 const { Item: MenuItem, SubMenu } = Menu;
 const { Content, Footer, Header, Sider } = Layout;
@@ -37,8 +38,12 @@ const App = () => {
             onClick: () => setMenuCollapsed(!menuCollapsed)
         });
     const history = useHistory();
+    const updateAvailable = useUpdateAvailable();
     function goHome() {
         history.push("/account/");
+    }
+    const refreshApp = () => {
+        window.location.reload();
     }
     const { accountInformation } = useApplicationState();
     useEffect(() => {
@@ -92,8 +97,19 @@ const App = () => {
                     <MenuItem title="Privacy information" key="privacy" icon={<SafetyOutlined />}>
                         <Link to="/privacy">Privacy</Link>
                     </MenuItem>
-                    <MenuItem title={"App Version"} key="app:version" icon={<ApiOutlined />}>
-                        <AppVersion />
+                    <MenuItem title={"App Version"+(updateAvailable?" - update available":"")}
+                              key="app:version"
+                              icon={<Badge count={menuCollapsed && updateAvailable?1:0} dot offset={[0, 8]}><ApiOutlined style={{color: "lightgray"}}/></Badge>}
+                              style={{cursor: "default"}}
+                    >
+                        <Badge
+                            offset={[6,-2]}
+                            count={updateAvailable
+                                ? <Link to="#" onClick={() => refreshApp()}> <CloudDownloadOutlined style={{ color: "lightgray", fontSize: "larger"}} /></Link>
+                                : 0}
+                            style={{color: "lightgray"}} >
+                            <AppVersion style={{color: "lightgray"}} />
+                        </Badge>
                     </MenuItem>
                 </Menu>
             </Sider>
