@@ -1,12 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import {TomlAssetInformation} from '../StellarHelpers';
-import {Avatar, Image} from 'antd';
+import {Avatar, Image, Skeleton} from 'antd';
 import stellarLogo from '../stellar_logo_black.png';
 import { Asset } from 'stellar-sdk';
 
 export default function AssetImage ({asset, assetInformation}: { asset: Asset, assetInformation: TomlAssetInformation }) {
-    const [imageSource, setImageSource] = useState(assetInformation.image);
+    const [imageSource, setImageSource] = useState<string>();
     useEffect(() => {
+    console.log(`ima: ${imageSource}`)
         if (asset.isNative()) {
             setImageSource(stellarLogo);
         } else if (assetInformation.code?.startsWith('0x')) {
@@ -20,7 +21,7 @@ export default function AssetImage ({asset, assetInformation}: { asset: Asset, a
         alt={`Logo for asset ${assetInformation.code} issued by ${assetInformation.issuer}`}
         shape='circle'
         size={40}
-        src={imageSource?<Image src={imageSource} preview={{mask: <></>}} />:false}
+        src={imageSource?<Image src={imageSource} preview={{mask: <></>}} />:<Skeleton avatar={{shape:"circle"}} loading={true} active={true} />}
         children={(
             (assetInformation.code??'')
                 // get only uppercase characters - if any
