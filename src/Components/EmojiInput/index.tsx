@@ -1,9 +1,14 @@
 import {AutoComplete, Input} from "antd";
 import {InputProps} from "antd/lib/input/Input";
 import {BaseEmoji, EmojiData, EmojiEntry, emojiIndex} from "emoji-mart";
-import type {OptionsType} from 'rc-select/lib/interface';
+import { DefaultOptionType } from "antd/lib/select";
 import {useState} from "react";
 
+type OptionsEntry = {value: string};
+interface AutoCompleteOptionType extends Omit<DefaultOptionType, "children"> {
+    options: OptionsEntry[]
+}
+type OptionsType = AutoCompleteOptionType[];
 
 export interface EmojiInputProps extends Omit<InputProps, 'onChange'|'value'> {
     onChange?: (value: string|undefined) => void,
@@ -36,19 +41,20 @@ export default function EmojiInput(props: EmojiInputProps) {
                 .filter(e => (e.name.toLowerCase().search(colonSearch) >= 0)
                     || (e.id?.search(colonSearch)??-1) >= 0
                     || (e.colons?.search(colonSearch)??-1) >= 0)
-                .map((emojiData) => ({
+                .map<AutoCompleteOptionType>((emojiData) => ({
                     label: (emojiData.name??''),
                     options: [{value: (emojiData as BaseEmoji).native}],
                 }));
 
             const groupedSuggestions = suggestions
                 // get unique labels
-                .map(s => s.label).filter((label, i, labels) => labels.indexOf(label) === i)
+                .map<string>(s => s.label)
+                .filter((label, i, labels) => labels.indexOf(label) === i)
                 // map merge all options with a given label in a single object
-                .map(label => {
+                .map<AutoCompleteOptionType>(label => {
                     const options = suggestions
                         .filter(suggestion => suggestion.label === label)
-                        .flatMap(s => s.options)
+                        .flatMap<OptionsEntry>(s => s.options)
                         .filter((currentOption, index, allOptions) => allOptions
                             .map(o => o.value).indexOf(currentOption.value) === index
                     );
