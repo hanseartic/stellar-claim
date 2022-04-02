@@ -1,5 +1,6 @@
 import {useEffect, useState, CSSProperties} from "react";
 import {useHistory, useLocation} from "react-router-dom";
+import Text from "antd/es/typography/Text";
 
 export const useUpdateAvailable = (): boolean => {
     const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -36,7 +37,7 @@ interface AppVersionProps {
     style?: CSSProperties
 }
 const AppVersion = (props: AppVersionProps) => {
-    return <text  {...props}>v: {currentVersion()}</text>;
+    return <Text {...props}>v: {currentVersion()}</Text>;
 }
 
 export default AppVersion;

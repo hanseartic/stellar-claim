@@ -32,11 +32,11 @@ const useTransactions = (claimableBalanceId: ClaimableBalanceId): TransactionRec
             new TransactionCallBuilder(new URI(horizonUrl().href))
                 .forClaimableBalance(claimableBalanceId)
                 .order("asc")
+                .limit(1)
                 .call()
                 .then(({records}) => records.map(slimTransactionRecord))
                 .then(setTransactions)
-                .catch(() => {
-                });
+                .catch(() => setTransactions([]));
         }
         // eslint-disable-next-line
     }, []);
