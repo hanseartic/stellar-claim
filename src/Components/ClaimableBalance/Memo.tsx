@@ -8,14 +8,11 @@ const Memo = ({claimableBalanceId}: {claimableBalanceId: string}) => {
     useEffect(() => {
         if (transactions.length > 0) {
             const transactionMemo = transactions.find(t => t.memo !== undefined && t.memo_type === "text")?.memo
-            if (transactionMemo) {
-                console.log("setting memo: "+transactionMemo)
-                setMemo(transactionMemo);
-            }
+            setMemo(transactionMemo);
         }
     }, [transactions]);
 
-    return <pre style={{maxWidth: '28ch'}}>{memo}</pre>
+    return <pre style={{maxWidth: '32ch'}}>{memo}</pre>
 }
 
 export default Memo;
