@@ -7,7 +7,6 @@ import { Asset } from 'stellar-sdk';
 export default function AssetImage ({asset, assetInformation}: { asset: Asset, assetInformation: TomlAssetInformation }) {
     const [imageSource, setImageSource] = useState<string>();
     useEffect(() => {
-    console.log(`ima: ${imageSource}`)
         if (asset.isNative()) {
             setImageSource(stellarLogo);
         } else if (assetInformation.code?.startsWith('0x')) {
@@ -17,11 +16,12 @@ export default function AssetImage ({asset, assetInformation}: { asset: Asset, a
         }
     }, [asset, assetInformation.code, assetInformation.image, imageSource]);
 
+    const loader = <Skeleton avatar={{shape:"circle"}} active />;
     return (<Avatar
         alt={`Logo for asset ${assetInformation.code} issued by ${assetInformation.issuer}`}
         shape='circle'
         size={40}
-        src={imageSource?<Image src={imageSource} preview={{mask: <></>}} />:<Skeleton avatar={{shape:"circle"}} loading={true} active={true} />}
+        src={imageSource?<Image src={imageSource} preview={{mask: <></>}} placeholder={loader}/>:<Skeleton avatar={{shape:"circle"}} active />}
         children={(
             (assetInformation.code??'')
                 // get only uppercase characters - if any
