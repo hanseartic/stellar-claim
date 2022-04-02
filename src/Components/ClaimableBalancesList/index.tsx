@@ -18,6 +18,7 @@ const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
         render: (cb: ClaimableBalanceRecord) => <AssetAmount amount={cb.amount} asset={cb.asset} />,
     },
     {
+        width: '21em',
         title: 'Asset',
         dataIndex: 'asset',
         key: 'asset',

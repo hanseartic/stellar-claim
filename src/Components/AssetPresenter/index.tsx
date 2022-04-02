@@ -1,10 +1,9 @@
-import {Badge, Col, Row} from 'antd';
+import {Col, Row} from 'antd';
 import StellarHelpers, {getStellarAsset, TomlAssetInformation} from '../../StellarHelpers';
 import React, {useEffect, useState} from 'react';
 import AssetImage from '../AssetImage';
 import StellarAddressLink from '../StellarAddressLink';
 import './styles.css'
-import nftLogo from '../../nft.png';
 
 interface AssetProps {
     code: string;
@@ -69,12 +68,7 @@ export default function AssetPresenter({code}: AssetProps) {
     return (
         <Row align="middle" gutter={2}>
             <Col flex="40px">
-                <Badge
-                    count={isStroopAsset?<img alt="NFT logo" src={nftLogo} height={20} title={"An asset with this badge is considered a NFT"} />:0}
-                    showZero={false}
-                    offset={[-35,35]}>
-                    <AssetImage asset={asset} assetInformation={assetInformation} />
-                </Badge>
+                <AssetImage asset={asset} assetInformation={assetInformation} nft={isStroopAsset}/>
             </Col>
             <Col flex="auto">
                 <Row>

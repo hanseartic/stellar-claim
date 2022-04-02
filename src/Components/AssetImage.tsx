@@ -4,7 +4,13 @@ import {Avatar, Image, Skeleton} from 'antd';
 import stellarLogo from '../stellar_logo_black.png';
 import { Asset } from 'stellar-sdk';
 
-export default function AssetImage ({asset, assetInformation}: { asset: Asset, assetInformation: TomlAssetInformation }) {
+interface AssetImageProps {
+    asset: Asset,
+    assetInformation: TomlAssetInformation
+    nft: boolean
+}
+
+export default function AssetImage ({asset, assetInformation, nft}: AssetImageProps) {
     const [imageSource, setImageSource] = useState<string>();
     useEffect(() => {
         if (asset.isNative()) {
@@ -16,12 +22,14 @@ export default function AssetImage ({asset, assetInformation}: { asset: Asset, a
         }
     }, [asset, assetInformation.code, assetInformation.image, imageSource]);
 
-    const loader = <Skeleton avatar={{shape:"circle"}} active />;
+    const shape = nft?'square':'circle';
+    const loader = <Skeleton avatar={{shape:shape}} active />;
+
     return (<Avatar
         alt={`Logo for asset ${assetInformation.code} issued by ${assetInformation.issuer}`}
-        shape='circle'
+        shape={shape}
         size={40}
-        src={imageSource?<Image src={imageSource} preview={{mask: <></>}} placeholder={loader}/>:<Skeleton avatar={{shape:"circle"}} active />}
+        src={imageSource?<Image src={imageSource} className={nft?"hexagon":""} preview={{mask: <></>, maskClassName:nft?"hexagon":""}} placeholder={loader} style={{objectFit:"fill", height: 40, width: 40}}/>:loader}
         children={(
             (assetInformation.code??'')
                 // get only uppercase characters - if any
