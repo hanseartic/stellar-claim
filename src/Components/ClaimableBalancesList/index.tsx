@@ -12,17 +12,17 @@ import AssetAmount from "../AssetAmount";
 
 const tableColumns: ColumnsType<ClaimableBalanceRecord> = [
     {
-        width: '9em',
-        title: 'Amount',
-        key: 'amount',
-        render: (cb: ClaimableBalanceRecord) => <AssetAmount amount={cb.amount} asset={cb.asset} />,
-    },
-    {
         width: '21em',
         title: 'Asset',
         dataIndex: 'asset',
         key: 'asset',
         render: (asset: string) => <AssetPresenter code={asset} />,
+    },
+    {
+        width: '9em',
+        title: 'Amount',
+        key: 'amount',
+        render: (cb: ClaimableBalanceRecord) => <AssetAmount amount={cb.amount} asset={cb.asset} />,
     },
     {
         width: '6em',
