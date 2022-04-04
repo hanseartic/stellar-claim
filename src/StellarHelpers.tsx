@@ -132,11 +132,15 @@ export const shortAddress = (asset: string, shortenTo: number) => {
     return asset.slice(0, Math.floor(shortenTo/2)) + '…' + asset.slice(-Math.ceil(shortenTo/2));
 };
 
-export const getStellarAsset = (code: string) => {
+export const getStellarAsset = (code: string): Asset => {
     const [assetCode, assetIssuer] = code.split(':')
-    return assetCode==='native'
+    return (assetCode === 'native' || assetCode === 'native:XLM')
         ? Asset.native()
         : new Asset(assetCode, assetIssuer);
+};
+const getAssetString = (asset: Asset|string): string => {
+    if (typeof asset === "string") return asset;
+    return asset.isNative()?"native":`${asset.getCode()}:${asset.getIssuer()}`;
 };
 
 export const getTxSignaturesWeight = (signedTransaction: Transaction, accountSigners: ServerApi.AccountRecordSigners[]): number => {
@@ -216,11 +220,12 @@ const assetIsStroopsAsset = async (network: knownNetworks, asset: string): Promi
     }
 };
 
-export const useAssetIsStroopsAsset = (asset: string): boolean => {
+export const useAssetIsStroopsAsset = (asset: string|Asset): boolean => {
     const [isStroops, setIsStroops] = useState(false);
     const {usePublicNetwork} = useApplicationState();
+
     useEffect(() => {
-        assetIsStroopsAsset(usePublicNetwork?'PUBLIC':'TESTNET', asset)
+        assetIsStroopsAsset(usePublicNetwork?'PUBLIC':'TESTNET', getAssetString(asset))
             .then(setIsStroops);
     }, [usePublicNetwork, asset]);
     return isStroops;

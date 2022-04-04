@@ -68,7 +68,7 @@ export default function AssetPresenter({code}: AssetProps) {
     return (
         <Row align="middle" gutter={2}>
             <Col flex="40px">
-                <AssetImage asset={asset} assetInformation={assetInformation} nft={isStroopAsset}/>
+                <AssetImage asset={asset} assetInformation={assetInformation} />
             </Col>
             <Col flex="auto">
                 <Row>

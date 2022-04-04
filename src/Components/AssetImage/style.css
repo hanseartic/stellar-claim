@@ -1,0 +1,19 @@
+.hexagon {
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.avatar-image {
+  align-items: stretch;
+  object-fit: cover;
+  justify-content: center;
+  height: 40px;
+  width: 40px;
+  display: flex;
+  overflow: hidden;
+}
+.avatar-image > img {
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+  aspect-ratio: 1;
+}
