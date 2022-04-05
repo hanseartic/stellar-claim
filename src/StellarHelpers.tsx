@@ -16,7 +16,7 @@ import {BigNumber} from "bignumber.js";
 import {useEffect, useState} from "react";
 
 const horizonUrls = {
-    PUBLIC: 'https://horizon.stellar.lobstr.co/',
+    PUBLIC: process.env.REACT_APP_HORIZON_URL ?? 'https://horizon.stellar.org/',
     TESTNET: 'https://horizon-testnet.stellar.org/',
 };
 

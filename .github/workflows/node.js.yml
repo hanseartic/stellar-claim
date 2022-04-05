@@ -26,6 +26,7 @@ jobs:
         env:
           REACT_APP_DONATION_ADDRESS: ${{ secrets.DONATION_ADDRESS }}
           REACT_APP_VERSION: ${GITHUB_SHA}
+          REACT_APP_HORIZON_URL: ${{ secrets.HORIZON_URL }}
       - name: store build artifacts
         uses: actions/upload-artifact@v2
         with:
