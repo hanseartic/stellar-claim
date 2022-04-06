@@ -133,7 +133,7 @@ export default function ClaimableBalancesOverview() {
             onClick: (e) => e.target instanceof HTMLAnchorElement || selectRow(record, e)
         })}
         rowSelection={rowSelection}
-        scroll={{y:600}}
+        scroll={{x: 'max-content'}}
         sticky={true/*{offsetHeader: 0, offsetScroll: 200}*/}
         //footer={tableSummary}
         title={() => (<span>Balances ready to claim on <b>{usePublicNetwork?'public':'test'}</b> network.</span>)}
