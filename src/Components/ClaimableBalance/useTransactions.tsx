@@ -21,13 +21,14 @@ const slimTransactionRecord = (transactionRecord: ServerApi.TransactionRecord): 
         fee_meta_xdr: undefined} as TransactionRecord
 }
 
-const useTransactions = (claimableBalanceId: ClaimableBalanceId): TransactionRecord[] => {
-    const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
+interface UseTransactionsResult {transactions: TransactionRecord[], state: 'error'|'loaded'|'loading'}
+const useTransactions = (claimableBalanceId: ClaimableBalanceId): UseTransactionsResult => {
+    const [result, setResult] = useState<UseTransactionsResult>({transactions: [], state: 'loading'});
     const {horizonUrl} = StellarHelpers();
     useEffect(() => {
         const txs = sessionStorage.getItem(cbTransactionsId(claimableBalanceId));
         if (null !== txs) {
-            setTransactions([JSON.parse(txs)]);
+            setResult(prev => ({transactions:[JSON.parse(txs)], state: 'loaded'}));
         } else {
             new TransactionCallBuilder(new URI(horizonUrl().href))
                 .forClaimableBalance(claimableBalanceId)
@@ -35,23 +36,23 @@ const useTransactions = (claimableBalanceId: ClaimableBalanceId): TransactionRec
                 .limit(1)
                 .call()
                 .then(({records}) => records.map(slimTransactionRecord))
-                .then(setTransactions)
-                .catch(() => setTransactions([]));
+                .then(txs => setResult(prev => ({transactions: txs, state: 'loaded'})))
+                .catch(() => setResult(prev => ({...prev, state: 'error'})));
         }
         // eslint-disable-next-line
     }, []);
 
     useEffect(() => {
-        if (transactions.length > 0) {
+        if (result.state === 'loaded') {
             try {
-                sessionStorage.setItem(cbTransactionsId(claimableBalanceId), JSON.stringify(transactions[0]));
+                sessionStorage.setItem(cbTransactionsId(claimableBalanceId), JSON.stringify(result.transactions[0]));
             } catch {
                 sessionStorage.clear();
             }
         }
-    }, [claimableBalanceId, transactions]);
+    }, [claimableBalanceId, result]);
 
-    return transactions;
+    return result;
 }
 
 export default useTransactions;
