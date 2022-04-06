@@ -1,5 +1,5 @@
-import {Table, TablePaginationConfig} from 'antd';
-import React, {useEffect, useState} from 'react';
+import {BackTop, Col, Row, Table, TablePaginationConfig} from 'antd';
+import React, {ReactNode, useEffect, useState} from 'react';
 import AccountSelector from '../Components/AccountSelector';
 import useApplicationState from '../useApplicationState';
 import AssetPresenter from '../Components/AssetPresenter';
@@ -12,23 +12,30 @@ import { AssetRecord } from 'stellar-sdk/lib/types/assets';
 
 type BalanceLine = Exclude<Horizon.BalanceLine, Horizon.BalanceLineLiquidityPool>;
 
-const balancesTableColumns = [
-    {
-        key: 'asset',
-        dataIndex: 'asset',
-        render: (asset: string) => <AssetPresenter code={asset} />,
-    },
-    {
-        key: 'balance',
-        render: (balanceRecord: AccountBalanceRecord) => <BalanceCard balanceRecord={balanceRecord} />
-    }
-];
+const AssetEntry = (balanceRecord: AccountBalanceRecord) => <Row justify="space-around" align="middle">
+    <Col flex="auto" >
+        <AssetPresenter code={balanceRecord.asset} />
+    </Col>
+    <Col flex="400px">
+        <BalanceCard balanceRecord={balanceRecord} />
+    </Col>
+</Row>;
+
 
 export default function AccountOverview() {
     const {horizonUrl} = StellarHelpers();
     const {accountInformation, showBalancesPagination, loadMarket} = useApplicationState();
     const [accountBalances, setAccountBalances] = useState<AccountBalanceRecord[]>([]);
     const [accountCreated, setAccountCreated] = useState<{date?: string, by?: string}>({});
+    const [xlmEntry, setXlmEntry] = useState<ReactNode>(null);
+
+    const balancesTableColumns = [
+        {
+            title: xlmEntry,
+            key: 'assetRecord',
+            render: (record: AccountBalanceRecord) => <AssetEntry {...record} />
+        }
+    ];
 
     useEffect(() => {
 
@@ -72,6 +79,7 @@ export default function AccountOverview() {
                         showAsStroop: false
                     };
                 });
+            setXlmEntry(<AssetEntry {...accountBalances.find(b => b.asset === 'native:XLM')!} />);
 
             new Server(horizonUrl().href)
                 .assets()
@@ -95,6 +103,7 @@ export default function AccountOverview() {
                         }) as AccountBalanceRecord
                   }))
                 .then(b => b.concat(accountBalances) as AccountBalanceRecord[])
+                .then(balances => balances.filter(balance => balance.asset !== 'native:XLM'))
                 .then(setAccountBalances);
         } else {
             setAccountBalances([]);
@@ -107,8 +116,11 @@ export default function AccountOverview() {
     return (<>
         <AccountSelector />
         <>Account {shortAddress(accountInformation.account?.id??'', 9)} created on {accountCreated.date} by <StellarAddressLink id={accountCreated.by} length={9} /></>
+        <BackTop visibilityHeight={50} />
         <Table
-            showHeader={false}
+            showHeader={true}
+            sticky
+            scroll={{x: 'max-content'}}
             columns={balancesTableColumns}
             dataSource={accountBalances}
             rowKey='asset'
