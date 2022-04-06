@@ -75,7 +75,7 @@ const MarkdownPage = (props: {source: string}) => {
             .then(text => setMarkdown(text));
     }, [props.source]);
 
-    return (<div style={{textAlign: "left"}}>
+    return (<div style={{textAlign: "left"}} className={"App-md"}>
         <ReactMarkdown
             children={markdown}
             components={components}

@@ -27,9 +27,12 @@
   color: #61dafb;
 }
 
+.App-md {
+  padding: 25px 5vh;
+}
+
 .App-content {
   flex-grow: 1;
-  padding: 25px 5vh;
 }
 
 .App-menu {
