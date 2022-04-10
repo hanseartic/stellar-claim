@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: CI
+    name: build application
     runs-on: ubuntu-latest
 
     strategy:
@@ -36,7 +36,9 @@ jobs:
 
   deploy:
     name: Deploy via rsync
-    environment: asteroids
+    environment:
+      name: asteroids
+      url: https://balances.lumens.space
     runs-on: ubuntu-latest
     needs: build
     steps:
