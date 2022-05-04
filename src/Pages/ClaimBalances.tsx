@@ -30,7 +30,7 @@ type BalanceLine = Horizon.BalanceLine;
 type ClaimableBalanceRecord = ServerApi.ClaimableBalanceRecord;
 
 
-const getMissingBalanceLines = (accountBalances: Horizon.BalanceLine[], assetCodes: string[]): string[] => {
+const getMissingBalanceLinesForAccount = (accountBalances: Horizon.BalanceLine[], assetCodes: string[], accountId: string): string[] => {
     const existingTrustLineCodes = accountBalances
         .filter((asset: BalanceLine): asset is (BalanceLineAsset|BalanceLineNative) =>
             asset.asset_type !== 'liquidity_pool_shares'
@@ -43,6 +43,7 @@ const getMissingBalanceLines = (accountBalances: Horizon.BalanceLine[], assetCod
     // consider each asset once
     // that has no trust-line yet
     return assetCodes
+        .filter(assetCode => getStellarAsset(assetCode).getIssuer() !== accountId)
         .filter((value, index, trustlines) => trustlines.indexOf(value) === index)
         .filter(asset => existingTrustLineCodes.indexOf(asset) < 0);
 };
@@ -72,7 +73,7 @@ const getEstimatedProceedings = (selectedBalances: ClaimableBalanceRecord[], hor
 };
 
 const generateClaimTransactionForAccountOnNetwork = (selectedBalances: ClaimableBalanceRecord[], account: AccountResponse, networkPassphrase: string) => {
-    const missingTrustLineCodes = getMissingBalanceLines(account.balances, selectedBalances.map(b => b.asset));
+    const missingTrustLineCodes = getMissingBalanceLinesForAccount(account.balances, selectedBalances.map(b => b.asset), account.accountId());
 
     const transactionBuilder = new TransactionBuilder(account, {fee: new BigNumber(100).times(BASE_FEE).toString(), networkPassphrase: networkPassphrase});
 
@@ -98,7 +99,7 @@ const generateCleanCBTransactionForAccountOnNetwork = (
     networkPassphrase: string,
     serverUrl: string
 ) => {
-    const missingTrustLineCodes = getMissingBalanceLines(account.balances, selectedBalances.map(b => b.asset));
+    const missingTrustLineCodes = getMissingBalanceLinesForAccount(account.balances, selectedBalances.map(b => b.asset), account.accountId());
     const transactionBuilder = new TransactionBuilder(account, {fee: BASE_FEE, networkPassphrase: networkPassphrase});
     const dustbin = account.data_attr['app.lumens_space.dustbin.account']
         ?Buffer.from(account.data_attr['app.lumens_space.dustbin.account'], 'base64').toString('binary')
