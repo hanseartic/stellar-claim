@@ -1,6 +1,5 @@
 .hexagon {
   clip-path: polygon(0% 50%, 20% 7.15%, 80% 7.15%, 100% 50%, 80% 92.85%, 20% 92.85%);
-  background:currentColor;
 }
 .avatar-image {
   align-items: stretch;
