@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {TomlAssetInformation, useAssetIsStroopsAsset} from '../../StellarHelpers';
-import {Avatar, Image, Skeleton} from 'antd';
+import {Avatar, Image as AntImage} from 'antd';
 import stellarLogo from '../../stellar_logo_black.png';
 import { Asset } from 'stellar-sdk';
 import './style.css';
+import Placeholder from "./Placeholder";
 
 interface AssetImageProps {
     asset: Asset,
@@ -12,6 +13,7 @@ interface AssetImageProps {
 
 interface loadingState {
     source?: string;
+    preview?: string;
     finished: boolean;
     error: boolean;
 }
@@ -22,21 +24,20 @@ export default function AssetImage ({asset, assetInformation}: AssetImageProps) 
 
     useEffect(() => {
         if (asset.isNative()) {
-            setState(s => ({...s, source: stellarLogo}));
+            setState(s => ({...s, preview: stellarLogo}));
         } else if (assetInformation.code?.startsWith('0x')) {
             setState(s => ({...s,
-                source: 'https://twemoji.maxcdn.com/v/latest/72x72/'+assetInformation.code?.substring(2).replace(/^0+/g, '').toLowerCase()+'.png',
+                preview: 'https://twemoji.maxcdn.com/v/latest/72x72/'+assetInformation.code?.substring(2).replace(/^0+/g, '').toLowerCase()+'.png',
             }));
         } else {
             setState(s => ({...s,
-                source: s.error?s.source:assetInformation.image,
+                source: s.error?s.source:assetInformation.image, preview: undefined,
             }));
         }
-    }, [asset, assetInformation.code, assetInformation.image, state.error]);
+    }, [asset, assetInformation.code, assetInformation.image, assetInformation.domain, state.error]);
 
     const shape = nft?'square':'circle';
     const className = nft?'hexagon':'';
-    const loader = <Skeleton avatar={{shape:shape}} active />;
 
     const onImageLoadingError = () => {
         setState({finished: true, error: true, source: undefined});
@@ -50,13 +51,24 @@ export default function AssetImage ({asset, assetInformation}: AssetImageProps) 
         shape={shape}
         size={40}
         className={className}
-        src={!state.error && <Image
+        src={!state.error && <AntImage
             onLoad={onImageLoaded}
             onError={onImageLoadingError}
             wrapperClassName={"avatar-image"}
-            src={state.source}
-            preview={{mask: <></>}}
-            placeholder={state.finished?null:loader} />}
+            src={state.preview}
+            preview={{
+                mask: <></>,
+                src: state.source
+            }}
+            placeholder={<Placeholder
+                className={className}
+                width={40} height={40}
+                asset={asset}
+                domain={assetInformation.domain??""}
+                originalSource={state.source}
+                onPreview={url => setState(p => ({...p, preview: url}))}
+            />}
+        />}
         children={(
             (assetInformation.code??'')
                 // get only uppercase characters - if any
