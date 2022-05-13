@@ -24,10 +24,10 @@ export default function AssetImage ({asset, assetInformation}: AssetImageProps) 
 
     useEffect(() => {
         if (asset.isNative()) {
-            setState(s => ({...s, preview: stellarLogo}));
+            setState(s => ({...s, source: stellarLogo}));
         } else if (assetInformation.code?.startsWith('0x')) {
             setState(s => ({...s,
-                preview: 'https://twemoji.maxcdn.com/v/latest/72x72/'+assetInformation.code?.substring(2).replace(/^0+/g, '').toLowerCase()+'.png',
+                source: 'https://twemoji.maxcdn.com/v/latest/72x72/'+assetInformation.code?.substring(2).replace(/^0+/g, '').toLowerCase()+'.png',
             }));
         } else {
             setState(s => ({...s,
@@ -51,7 +51,7 @@ export default function AssetImage ({asset, assetInformation}: AssetImageProps) 
         shape={shape}
         size={40}
         className={className}
-        src={!state.error && <AntImage
+        src={(!state.error || state.preview) && state.source && <AntImage
             onLoad={onImageLoaded}
             onError={onImageLoadingError}
             wrapperClassName={"avatar-image"}
