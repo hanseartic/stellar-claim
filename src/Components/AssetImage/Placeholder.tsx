@@ -18,7 +18,11 @@ const Placeholder = (props: ImageProps & PlaceholderProps) => {
         [extension, asset]
     );
     useEffect(() => {
-        if (originalSource?.includes("https://ipfs.io")) {
+        if (!originalSource) {
+            return;
+        }
+        const knownSourceHosts = ["ipfs.io"];
+        if (knownSourceHosts.includes(new URL(originalSource).host)) {
             fetch(originalSource, {method:"GET", headers: {"Range": "bytes=0-0"}})
                 .then(res => res.blob())
                 .then(blob => {
@@ -27,7 +31,7 @@ const Placeholder = (props: ImageProps & PlaceholderProps) => {
                     }
                 })
                 .catch(console.debug);
-        } else if (originalSource) {
+        } else {
             onPreview?.(originalSource);
         }
     }, [originalSource, onPreview]);

@@ -89,7 +89,7 @@ export default function AccountSelector() {
             }));
         }
         // eslint-disable-next-line
-    }, [accountInformation.state, accountId])
+    }, [accountInformation.state, accountId]);
 
     useEffect(() => {accountParam && setAccountId(accountParam)}, [accountParam]);
 

@@ -48,7 +48,7 @@ const AmountInput = (props: AmountInputProps) => {
                 decimalPlaces = Math.max(decimalPlaces, desiredDecimals);
             }
             const newStringValue = currentValue.toFormat(decimalPlaces, amountFormat)
-                + (currentStringValue.endsWith(".") ? "." : "")
+                + (currentStringValue.endsWith(".") ? "." : "");
             setStringValue(newStringValue);
             notifyChange(currentValue);
             setCursorPos((currentCursor??0) + (newStringValue.length - currentLength));
@@ -74,7 +74,7 @@ const AmountInput = (props: AmountInputProps) => {
                          value={stringValue}
                          onChange={onInputChange}
                          placeholder={formatAmount(placeholder??"", showAsStroops??false)}
-                         ref={inputRef} />
+                         ref={inputRef} />;
     return <Tooltip trigger={["focus"]}
                     placement={"bottomLeft"}
                     title={<>Corresponds to actual value of <br/><code>{value?.toString(10)??"0"}</code></>}

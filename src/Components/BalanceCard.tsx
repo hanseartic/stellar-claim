@@ -194,7 +194,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     const claimants = [
                         new Claimant(
                             destinationAccount.id,
-                            (!!claimValidFrom || !!claimValidFrom) ? Claimant.predicateAnd(
+                            (!!claimValidFrom || !!claimValidTo) ? Claimant.predicateAnd(
                                 claimValidFrom
                                     ? Claimant.predicateNot(Claimant.predicateBeforeAbsoluteTime(claimValidFrom.toString()))
                                     : Claimant.predicateUnconditional(),
@@ -219,7 +219,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                             amount: sendAmount?.toString()??'',
                             asset: asset,
                             claimants: claimants,
-                        }))
+                        }));
                 } else {
                     transactionBuilder.addOperation(Operation.payment({
                         destination: destinationAccount.id,
@@ -235,7 +235,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                     transactionBuilder.addOperation(Operation.changeTrust({
                         asset: asset,
                         limit: '0',
-                    }))
+                    }));
                 }
             }
             const transactionXDR = transactionBuilder

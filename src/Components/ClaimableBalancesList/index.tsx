@@ -91,7 +91,7 @@ export default function ClaimableBalancesOverview() {
             }
         }
         setSelectedBalanceIds(selectedIds);
-    }
+    };
 
     const pagination: TablePaginationConfig = {
         hideOnSinglePage: false,
