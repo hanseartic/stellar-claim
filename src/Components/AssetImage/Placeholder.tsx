@@ -1,6 +1,7 @@
 import {Image as AntImage, ImageProps, Skeleton} from "antd";
 import {Asset} from "stellar-sdk";
 import React, {useEffect, useMemo, useState} from "react";
+import URI from "urijs";
 
 type PlaceholderProps = {
     asset: Asset;
@@ -22,7 +23,7 @@ const Placeholder = (props: ImageProps & PlaceholderProps) => {
             return;
         }
         const knownSourceHosts = ["ipfs.io"];
-        if (knownSourceHosts.includes(new URL(originalSource).host)) {
+        if (knownSourceHosts.includes(new URI(originalSource).host())) {
             fetch(originalSource, {method:"GET", headers: {"Range": "bytes=0-0"}})
                 .then(res => res.blob())
                 .then(blob => {
