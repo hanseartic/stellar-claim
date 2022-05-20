@@ -25,6 +25,7 @@
     "react-markdown": "^6.0.2",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^5.0.1",
+    "react-use": "^17.3.2",
     "rehype-raw": "^5.1.0",
     "runes": "^0.4.3",
     "stellar-resolve-claimant-predicates": "^2.0.5",
@@ -33,13 +34,15 @@
     "web-vitals": "^1.1.2"
   },
   "scripts": {
-    "prebuild": "npx envdist -e; ./getversion.sh",
+    "prebuild": "npx envdist -e; npm run preserve",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
     "eject": "craco eject",
-    "serve": "serve -s build"
+    "preserve": "cd server; npm i; npx @vercel/ncc build server.js -o ..",
+    "serve": "node index.js -s build"
   },
+  "proxy": "http://localhost:3001",
   "eslintConfig": {
     "extends": [
       "react-app",

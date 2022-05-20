@@ -1,43 +1,55 @@
-import {useEffect, useState, CSSProperties} from "react";
-import {useHistory, useLocation} from "react-router-dom";
+import { useEffect, useState, CSSProperties } from "react";
+import { useHistory, useLocation } from "react-router-dom";
+import { useInterval } from "react-use";
 import Text from "antd/es/typography/Text";
+import { SERVER_VERSION_PATH } from "../shared";
+
+const getVersionFromServer = () => fetch(SERVER_VERSION_PATH)
+        .then(r => r.json())
+        .then(version => version.current)
+        .catch(() => "unknown");
 
 export const useUpdateAvailable = (): boolean => {
     const [updateAvailable, setUpdateAvailable] = useState(false);
-    const serverVersion = useServerVersion();
+    const [serverVersion, setServerVersion] = useState<string>();
+    const appVersion = useAppVersion();
     const history = useHistory();
     const loc = useLocation();
 
+    useInterval(() => {
+        getVersionFromServer().then(setServerVersion);
+        }, Number(process.env.REACT_APP_POLL_VERSION??60000)
+    );
+
     useEffect(() => {
-        setUpdateAvailable(currentVersion() !== serverVersion);
-    }, [serverVersion, history, loc]);
+        if (!appVersion || !serverVersion) {
+            return;
+        }
+        setUpdateAvailable(appVersion !== serverVersion);
+    }, [appVersion, serverVersion, history, loc]);
 
     return updateAvailable;
 }
-const currentVersion = () => process.env.REACT_APP_VERSION?.substring(0, 7);
 
-const useServerVersion = (): string|undefined => {
-    const [version, setVersion] = useState<string|undefined>(undefined);
-    const history = useHistory();
-    const loc = useLocation();
+const useAppVersion = () => {
+    const [appVersion, setAppVersion] = useState<string>();
 
     useEffect(() => {
-        fetch("/VERSION")
-            .then(r => r.text())
-            .then(version => version.replaceAll(/[\r\n]+/g, ""))
-            .then(version => version.substring(0, 7))
-            .then(setVersion)
-            .catch(() => setVersion("unknown"));
-    }, [history, loc]);
+        getVersionFromServer()
+            .then(serverVersion => {
+                setAppVersion(appVersion => appVersion??serverVersion);
+            });
+    }, []);
 
-    return version;
-}
+    return appVersion;
+};
 
 interface AppVersionProps {
     style?: CSSProperties
 }
 const AppVersion = (props: AppVersionProps) => {
-    return <Text {...props}>v: {currentVersion()}</Text>;
+    const appVersion = useAppVersion();
+    return <Text {...props}>v: {appVersion}</Text>;
 }
 
 export default AppVersion;
