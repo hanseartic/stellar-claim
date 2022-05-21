@@ -1,8 +1,8 @@
 import { useEffect, useState, CSSProperties } from "react";
 import { useHistory, useLocation } from "react-router-dom";
-import { useInterval } from "react-use";
 import Text from "antd/es/typography/Text";
 import { SERVER_VERSION_PATH } from "../shared";
+import { Workbox } from "workbox-window";
 
 const getVersionFromServer = () => fetch(SERVER_VERSION_PATH)
         .then(r => r.json())
@@ -16,16 +16,28 @@ export const useUpdateAvailable = (): boolean => {
     const history = useHistory();
     const loc = useLocation();
 
-    useInterval(() => {
-        getVersionFromServer().then(setServerVersion);
-        }, Number(process.env.REACT_APP_POLL_VERSION??60000)
-    );
+    useEffect(() => {
+        const workbox = new Workbox(process.env.PUBLIC_URL + "/service-worker.js");
+        workbox.addEventListener("waiting", () => {
+            workbox.messageSW({type: 'GET_VERSION'})
+                .then(version => {
+                    console.debug("got server-version from service-worker", version);
+                    setServerVersion(version.server);
+                    if (version.server === version.app) {
+                        // immediately update the worker, when a new version was found
+                        // on page load
+                        workbox.messageSkipWaiting();
+                    }
+                });
+        });
+        workbox.register();
+    }, []);
 
     useEffect(() => {
         if (!appVersion || !serverVersion) {
             return;
         }
-        setUpdateAvailable(appVersion !== serverVersion);
+        setUpdateAvailable(isUpdateAvailable => isUpdateAvailable || (appVersion !== serverVersion));
     }, [appVersion, serverVersion, history, loc]);
 
     return updateAvailable;

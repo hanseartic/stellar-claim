@@ -26,6 +26,7 @@ import {
 
 import {Badge, Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
 import {AccountState} from "./Components/AccountSelector";
+import { Workbox } from "workbox-window";
 import AppVersion, {useUpdateAvailable} from "./Pages/AppVersion";
 
 const { Item: MenuItem, SubMenu } = Menu;
@@ -43,7 +44,14 @@ const App = () => {
         history.push("/account/");
     }
     const refreshApp = () => {
-        window.location.reload();
+        const workbox = new Workbox(process.env.PUBLIC_URL + "/service-worker.js");
+        workbox.addEventListener('controlling', () => {
+            window.location.reload();
+        });
+
+        workbox.register().then(reg => {
+            reg?.waiting?.postMessage({type: 'SKIP_WAITING'});
+        });
     }
     const { accountInformation } = useApplicationState();
     useEffect(() => {

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require("path");
 const bodyParser = require('body-parser');
 const { gitlogPromise } = require('gitlog');
-const {SERVER_VERSION_PATH} = require('../src/shared');
+const {SERVER_VERSION_PATH, APP_VERSION} = require('../src/shared');
 const express = require('express');
 const expressApp = express();
 const rateLimit = require('express-rate-limit');
@@ -10,13 +10,16 @@ const rateLimit = require('express-rate-limit');
 const app = (serveStatic) => {
     expressApp.use(bodyParser.json());
     expressApp.use(bodyParser.urlencoded({ extended: false }));
-    const limiter = rateLimit({
+    const rateLimiter = rateLimit({
         windowMs: 60*1000, // 1 minute
         max: 60,
         standardHeaders: true,
     });
 
-    expressApp.use(limiter);
+    expressApp.use(rateLimiter, (req, res, next) => {
+        res.setHeader('X-Powered-By', 'stellar claim');
+        next();
+    });
 
     expressApp.get(SERVER_VERSION_PATH, (req, res) => {
         res.setHeader('Content-Type', 'application/json');

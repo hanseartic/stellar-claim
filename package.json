@@ -34,7 +34,8 @@
     "web-vitals": "^1.1.2"
   },
   "scripts": {
-    "prebuild": "npx envdist -e; npm run preserve",
+    "set-app-version": "APP_VERSION=$(git rev-parse --short HEAD) npx envsub --syntax handlebars src/app_version.js.dist src/app_version.js",
+    "prebuild": "npm run set-app-version; npx envdist -e; npm run preserve",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
