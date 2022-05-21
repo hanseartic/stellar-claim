@@ -61,7 +61,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: server
-          path: index.js
+          path: .
+
+      - run: "ls -hal"
 
       - name: deploy using rsync
         uses: burnett01/rsync-deployments@5.2
@@ -81,4 +83,3 @@ jobs:
           key: ${{ secrets.KEY }}
           command: |
             cd ${{ secrets.PATH }}; git pull --rebase -f
-            ${{ secrets.RESTART_CMD }}
