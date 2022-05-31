@@ -1,7 +1,7 @@
 import useApplicationState from "./useApplicationState";
 import {
     AccountResponse,
-    Asset, FeeBumpTransaction,
+    Asset, FeeBumpTransaction, Networks,
     Operation,
     Server,
     ServerApi,
@@ -13,11 +13,12 @@ import {
 import memoize from "memoizee";
 import assert from "assert";
 import {BigNumber} from "bignumber.js";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 
-const horizonUrls = {
+export const horizonUrls = {
     PUBLIC: process.env.REACT_APP_HORIZON_URL ?? 'https://horizon.stellar.org/',
     TESTNET: 'https://horizon-testnet.stellar.org/',
+    LOBSTR: 'https://horizon.stellar.lobstr.co',
 };
 
 const stellarExpertUrls = {
@@ -25,7 +26,7 @@ const stellarExpertUrls = {
     TESTNET: 'https://stellar.expert/explorer/testnet/',
 };
 
-type knownNetworks = 'PUBLIC'|'TESTNET';
+type knownNetworks = keyof typeof Networks;
 
 const serverUrl = (base: string, path?: string): URL => {
     return new URL(path??'', new URL(base));
@@ -105,7 +106,7 @@ const operationThresholds: OperationThresholds<KnownOperationThresholds, KnownAc
     },
 };
 
-export const reasonIsSignatureWeightInsufficient = (reason: object): reason is SignatureWeightInsufficient => {
+export const reasonIsSignatureWeightInsufficient = (reason: object): boolean => {
     return typeof reason === 'object' && 'signaturesWeight' in reason && 'requiredThreshold' in reason;
 }
 
@@ -234,10 +235,10 @@ export const useAssetIsStroopsAsset = (asset: string|Asset): boolean => {
 const StellarHelpers = () => {
     const {usePublicNetwork} = useApplicationState();
 
-    const getSelectedNetwork = (): knownNetworks => usePublicNetwork?'PUBLIC':'TESTNET';
+    const getSelectedNetwork = useCallback((): knownNetworks => usePublicNetwork?'PUBLIC':'TESTNET', [usePublicNetwork]);
 
     const expertUrl = (path?: string) => serverUrl(stellarExpertUrls[getSelectedNetwork()], path);
-    const horizonUrl = (path?: string) => serverUrl(horizonUrls[getSelectedNetwork()], path);
+    const horizonUrl = useCallback((path?: string) => serverUrl(horizonUrls[getSelectedNetwork()], path), [getSelectedNetwork]);
 
     return {
         expertUrl: expertUrl,

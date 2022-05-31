@@ -34,13 +34,13 @@
     "web-vitals": "^1.1.2"
   },
   "scripts": {
-    "set-app-version": "APP_VERSION=$(git rev-parse --short HEAD) npx envsub --syntax handlebars src/app_version.js.dist src/app_version.js",
+    "set-app-version": "APP_VERSION=$(git rev-parse --short HEAD) npx envsub --syntax handlebars app_version.js.dist src/app_version.js",
     "prebuild": "npm run set-app-version; npx envdist -e; npm run preserve",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
     "eject": "craco eject",
-    "preserve": "cd server; npm i; npx @vercel/ncc build server.js -o ..",
+    "preserve": "cd server; npm i; npx --yes @vercel/ncc build server.js -o ..",
     "serve": "node index.js -s build"
   },
   "proxy": "http://localhost:3001",

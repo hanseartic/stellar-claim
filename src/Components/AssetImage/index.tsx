@@ -45,6 +45,9 @@ export default function AssetImage ({asset, assetInformation}: AssetImageProps) 
     const onImageLoaded = () => {
         setState(state => ({...state, finished: true}));
     }
+    const onPlaceholderPreview = (preview: string) => {
+        setState(p => ({...p, preview}));
+    }
 
     return (<Avatar
         alt={`Logo for asset ${assetInformation.code} issued by ${assetInformation.issuer}`}
@@ -66,7 +69,7 @@ export default function AssetImage ({asset, assetInformation}: AssetImageProps) 
                 asset={asset}
                 domain={assetInformation.domain??""}
                 originalSource={state.source}
-                onPreview={url => setState(p => ({...p, preview: url}))}
+                onPreview={onPlaceholderPreview}
             />}
         />}
         children={(

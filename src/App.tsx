@@ -1,4 +1,4 @@
-import react, {useEffect} from 'react';
+import react, {useEffect, useMemo} from 'react';
 import {BrowserRouter as Router, Link, Redirect, Route, Switch, useHistory,} from 'react-router-dom';
 import './App.css';
 import 'antd/dist/antd.css';
@@ -17,23 +17,20 @@ import {
     TableOutlined,
 } from '@ant-design/icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {
-    faBroadcastTower,
-    faHandHolding,
-    faIdCard,
-    faWallet,
-} from '@fortawesome/free-solid-svg-icons';
+import {faBroadcastTower, faHandHolding, faIdCard, faWallet,} from '@fortawesome/free-solid-svg-icons';
 
 import {Badge, Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
 import {AccountState} from "./Components/AccountSelector";
-import { Workbox } from "workbox-window";
+import {Workbox} from "workbox-window";
 import AppVersion, {useUpdateAvailable} from "./Pages/AppVersion";
-
+import {horizonUrls} from "./StellarHelpers";
+import {Server} from "stellar-sdk";
+import {AccountFetcherMessage, AccountFetcherResponse} from './updateAccountWorker';
 const { Item: MenuItem, SubMenu } = Menu;
 const { Content, Footer, Header, Sider } = Layout;
 
 const App = () => {
-    const { showBalancesPagination, setShowBalancesPagination, loadMarket, setLoadMarket, menuCollapsed, setMenuCollapsed, setUsePublicNetwork, usePublicNetwork } = useApplicationState();
+    const { accountInformation, setAccountInformation, showBalancesPagination, setShowBalancesPagination, loadMarket, setLoadMarket, menuCollapsed, setMenuCollapsed, setUsePublicNetwork, usePublicNetwork, setWebWorker } = useApplicationState();
     const collapseTrigger = react.createElement(
         menuCollapsed?MenuUnfoldOutlined:MenuFoldOutlined, {
             onClick: () => setMenuCollapsed(!menuCollapsed)
@@ -53,7 +50,6 @@ const App = () => {
             reg?.waiting?.postMessage({type: 'SKIP_WAITING'});
         });
     }
-    const { accountInformation } = useApplicationState();
     useEffect(() => {
         if (history.location.pathname.startsWith('/claim/') || history.location.pathname.startsWith('/account/')) {
             let page = history.location.pathname.split('/')[1];
@@ -61,6 +57,40 @@ const App = () => {
             if ([AccountState.valid].includes(accountInformation.state!)) history.replace(`/${page}/${accountInformation.account!.id}`);
         }
     }, [accountInformation, history]);
+
+    const worker = useMemo(() =>
+        new Worker(new URL('./updateAccountWorker.tsx', import.meta.url), {type: "module"}),
+        []);
+
+    useEffect(() => {
+        return () => {
+            worker.terminate();
+        }
+        // eslint-disable-next-line
+    }, []);
+
+    useEffect(() => {
+        if (accountInformation.state !== AccountState.valid) {
+            return;
+        }
+
+        worker.onmessage = ((ev: MessageEvent<AccountFetcherResponse>) => {
+            if (accountInformation.account?.id) {
+                const server = new Server(horizonUrls[usePublicNetwork?"PUBLIC":"TESTNET"]);
+                server.loadAccount(accountInformation.account.id)
+                    .then(account => setAccountInformation({account}));
+            }
+        });
+        worker.postMessage({
+            network: usePublicNetwork?"PUBLIC":"TESTNET",
+            accountId: accountInformation.account?.id,
+            interval: Number(process.env.REACT_APP_POLL_ACCOUNT ?? 60000),
+        } as AccountFetcherMessage);
+        setWebWorker(worker);
+
+        // eslint-disable-next-line
+    }, [accountInformation.account, usePublicNetwork]);
+
     return (
         <Layout className="App">
             <Sider

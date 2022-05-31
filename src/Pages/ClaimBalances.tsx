@@ -1,9 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import BigNumber from "bignumber.js";
 import ClaimableBalancesOverview from "../Components/ClaimableBalancesList";
-import AccountSelector, {AccountState} from "../Components/AccountSelector";
-import {Button, Col, notification, Popover, Row} from "antd";
-import {ClearOutlined, WalletOutlined} from "@ant-design/icons";
+import AccountSelector, { AccountState } from "../Components/AccountSelector";
+import { Button, Col, notification, Popover, Row } from "antd";
+import { ClearOutlined, WalletOutlined } from "@ant-design/icons";
 import useApplicationState from "../useApplicationState";
 import {
     AccountResponse,
@@ -22,7 +22,7 @@ import StellarHelpers, {
     getStellarAsset,
 } from '../StellarHelpers';
 
-import {submitTransaction} from "../Components/WalletHandling";
+import { submitTransaction } from "../Components/WalletHandling";
 
 type BalanceLineAsset = Horizon.BalanceLineAsset;
 type BalanceLineNative = Horizon.BalanceLineNative;
@@ -148,7 +148,7 @@ const generateCleanCBTransactionForAccountOnNetwork = (
 
 
 export default function ClaimBalances() {
-    const {accountInformation, balancesClaiming, selectedBalances, setBalancesClaiming, setAccountInformation} = useApplicationState();
+    const {accountInformation, balancesClaiming, selectedBalances, setBalancesClaiming, setAccountInformation, webWorker} = useApplicationState();
     const [estimatedProceedings, setEstimatedProceedings] = useState(new BigNumber(0));
     const {getSelectedNetwork, horizonUrl} = StellarHelpers();
 
@@ -162,36 +162,46 @@ export default function ClaimBalances() {
     // eslint-disable-next-line
     }, [selectedBalances]);
 
+    const processTxResult = (resultXdr: string) => {
+        const tr = xdr.TransactionResult.fromXDR(resultXdr, 'base64');
+        const proceedings = tr.result().results()
+            .filter(r => r.value().switch().name === 'pathPaymentStrictSend')
+            .map(pp => pp.tr().pathPaymentStrictSendResult().value())
+            .filter((result): result is xdr.PathPaymentStrictSendResultSuccess => true)
+            .map(result => result.last().amount().toString())
+            .map(amount => new BigNumber(amount).div(10000000))
+            .reduce((prev, current) => prev.plus(current), new BigNumber(0))
+            .minus(new BigNumber(tr.feeCharged().toString()).div(10000000));
+        notification.info({
+            message: `Cleaning claimable balances yielded proceedings of ${proceedings} XLM.`,
+        });
+        notification.close("notification:sentToVault");
+    };
+
     const cleanBalances = async () => {
         if (accountInformation.state !== AccountState.valid) return;
         let account = accountInformation.account!;
         setBalancesClaiming(true);
-        const unsignedXDR = await generateCleanCBTransactionForAccountOnNetwork(selectedBalances, account, Networks[getSelectedNetwork()], horizonUrl().href);
-
-        submitTransaction(unsignedXDR, account, horizonUrl().href, getSelectedNetwork())
+        const network = getSelectedNetwork();
+        const unsignedXDR = await generateCleanCBTransactionForAccountOnNetwork(selectedBalances, account, Networks[network], horizonUrl().href);
+        submitTransaction(unsignedXDR, account, horizonUrl().href, network)
             .then(submitTransactionResponse => {
                 if (submitTransactionResponse) {
-                    if (submitTransactionResponse.vault) {
-                        return;
-                    }
-                    const tr = xdr.TransactionResult.fromXDR(submitTransactionResponse.result_xdr!, 'base64');
-                    const proceedings = tr.result().results()
-                        .filter(r => r.value().switch().name === 'pathPaymentStrictSend')
-                        .map(pp => pp.tr().pathPaymentStrictSendResult().value())
-                        .filter((result): result is xdr.PathPaymentStrictSendResultSuccess => true)
-                        .map(result => result.last().amount().toString())
-                        .map(amount => new BigNumber(amount).div(10000000))
-                        .reduce((prev, current) => prev.plus(current), new BigNumber(0))
-                        .minus(new BigNumber(tr.feeCharged().toString()).div(10000000));
-                    notification.info({
-                        message: `Cleaning claimable balances yielded proceedings of ${proceedings} XLM.`,
-                    });
+                    processTxResult(submitTransactionResponse.result_xdr!);
                 }
             })
             .then(() => {
-                new Server(horizonUrl().href)
-                    .loadAccount(account.id)
-                    .then(account => setAccountInformation({account: account}));
+                if (webWorker) {
+                    webWorker.postMessage({
+                        network: network,
+                        accountId: account.id,
+                        interval: 0,
+                    });
+                } else {
+                    new Server(horizonUrl().href)
+                        .loadAccount(account.id)
+                        .then(account => setAccountInformation({account: account}));
+                }
             })
             .finally(() => {
                 setTimeout(() => setBalancesClaiming(false), 200);
@@ -202,13 +212,22 @@ export default function ClaimBalances() {
         if (accountInformation.state !== AccountState.valid) return;
         let account = accountInformation.account!;
         setBalancesClaiming(true);
-        const unsignedXDR = generateClaimTransactionForAccountOnNetwork(selectedBalances, account, Networks[getSelectedNetwork()])
+        const network = getSelectedNetwork();
+        const unsignedXDR = generateClaimTransactionForAccountOnNetwork(selectedBalances, account, Networks[network])
 
-        submitTransaction(unsignedXDR, account, horizonUrl().href, getSelectedNetwork())
+        submitTransaction(unsignedXDR, account, horizonUrl().href, network)
             .then(() => {
-                new Server(horizonUrl().href)
-                    .loadAccount(account.id)
-                    .then(account => setAccountInformation({account: account}));
+                if (webWorker) {
+                    webWorker.postMessage({
+                        network: network,
+                        accountId: account.id,
+                        interval: 0,
+                    });
+                } else {
+                    new Server(horizonUrl().href)
+                        .loadAccount(account.id)
+                        .then(account => setAccountInformation({account: account}));
+                }
             })
             .finally(() => {
                 setTimeout(() => setBalancesClaiming(false), 200);

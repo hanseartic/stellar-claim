@@ -3,14 +3,14 @@ import {Asset} from "stellar-sdk";
 import React, {useEffect, useMemo, useState} from "react";
 import URI from "urijs";
 
-type PlaceholderProps = {
+interface  PlaceholderProps extends ImageProps {
     asset: Asset;
     domain: string;
     originalSource?: string;
-    onPreview?: (url: string) => void;
-};
+    onPreview?: (url: string) => void | undefined;
+}
 
-const Placeholder = (props: ImageProps & PlaceholderProps) => {
+const Placeholder = (props: PlaceholderProps) => {
     const {asset, onPreview, originalSource} = props;
     const skeleton = useMemo(() => <Skeleton avatar={{shape:"square"}} active={true} />, []);
     const [extension, setExtension] = useState<string>();

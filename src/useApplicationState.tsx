@@ -15,6 +15,7 @@ export interface ApplicationState extends ApplicationContextState {
     setMenuCollapsed: (menuCollapsed: boolean) => void;
     setSelectedBalances: (selectedBalances: ClaimableBalanceRecord[]) => void;
     setUsePublicNetwork: (usePublicNetwork: boolean) => void;
+    setWebWorker: (worker?: Worker) => void;
 }
 
 // type Setters<Type> = {
@@ -58,6 +59,9 @@ const useApplicationState: () => ApplicationState = () => {
     function setUsePublicNetwork(usePublicNetwork: boolean) {
         setState(state => ({...state, usePublicNetwork}));
     }
+    function setWebWorker(worker?: Worker) {
+        setState(state => ({...state, webWorker: worker}));
+    }
 
     return {
         ...state,
@@ -71,6 +75,7 @@ const useApplicationState: () => ApplicationState = () => {
         setMenuCollapsed,
         setSelectedBalances,
         setUsePublicNetwork,
+        setWebWorker,
     }
 }
 

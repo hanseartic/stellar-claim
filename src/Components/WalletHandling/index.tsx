@@ -1,9 +1,12 @@
 import freighterApi, {signTransaction} from "@stellar/freighter-api";
 import {notification} from "antd";
 import {AccountResponse, Horizon, NetworkError, Networks, Server, TransactionBuilder, xdr} from "stellar-sdk";
-import {reasonIsSignatureWeightInsufficient, verifyTransactionSignaturesForAccount} from "../StellarHelpers";
+import {
+    reasonIsSignatureWeightInsufficient,
+    verifyTransactionSignaturesForAccount
+} from "../../StellarHelpers";
 import React from "react";
-import axios, {AxiosResponse} from 'axios'
+import {WaitForTransactionMessage, WaitForTransactionResponse} from "./waitForTransactionWorker";
 
 type TransactionFailed = Horizon.ErrorResponseData.TransactionFailed;
 type TransactionResponse = Horizon.TransactionResponse;
@@ -51,16 +54,22 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
             }
             if (reasonIsSignatureWeightInsufficient(reason)) {
                 if (account.signers.find(s => s.key === lobstrMarker && s.weight === 1)) {
-                    return axios.post('https://vault.lobstr.co/api/transactions/', { xdr: reason.xdr})
-                        .then((res: AxiosResponse) => {
+                    return fetch('https://vault.lobstr.co/api/transactions/',{
+                        method: "POST",
+                        headers: {"content-type": "application/json"},
+                        redirect: "follow",
+                        body: JSON.stringify({xdr: reason.xdr}),
+                    })
+                        .then(res => {
                             if (res.status === 201) {
                                 notification.info({
                                     message: "Transaction was sent to LOBSTR vault",
                                     description: "The current signature weight was not sufficient. Transaction was send to LOBSTR vault for additional signatures.",
-                                    duration: 20,
-                                })
+                                    duration: null,
+                                    key: "notification:sentToVault",
+                                });
                             }
-                            return {vault: true, successful: true};
+                            return {successful: true, vault: true};
                         })
                         .catch(e => {
                             notification.error({
@@ -99,5 +108,23 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
                 });
                 return;
             }
+        })
+        .then(r => {
+            if (r && ('vault' in r)) {
+                return new Promise((resolve, reject) => {
+                    const worker = new Worker(new URL('./waitForTransactionWorker.tsx', import.meta.url), {type: "module"});
+                    worker.onmessage = ((ev: MessageEvent<WaitForTransactionResponse>) => {
+                        resolve({...ev.data, successful: true});
+                        worker.terminate();
+                    });
+                    worker.postMessage(
+                        {
+                            network: selectedNetwork,
+                            accountId: account.id,
+                        } as WaitForTransactionMessage
+                    );
+                })
+            }
+            return r;
         })
 }

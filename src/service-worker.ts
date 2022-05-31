@@ -42,6 +42,10 @@ registerRoute(
             return false;
         }
 
+        if (url.pathname.match(/^\/VERSION$/g)) {
+            return false;
+        }
+
         // If this looks like a URL for a resource, because it contains
         // a file extension, skip.
         if (url.pathname.match(fileExtensionRegexp)) {
@@ -67,6 +71,16 @@ registerRoute(
             // least-recently used images are removed.
             new ExpirationPlugin({ maxEntries: 50 }),
         ],
+    })
+);
+
+registerRoute(
+    ({ url }) => url.pathname.endsWith("/.well-known/stellar.toml"),
+    new StaleWhileRevalidate({
+        cacheName: 'tomls',
+        plugins: [
+            new ExpirationPlugin({ maxAgeSeconds: 600, purgeOnQuotaError: true }),
+        ]
     })
 );
 

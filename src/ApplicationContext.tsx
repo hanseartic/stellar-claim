@@ -19,6 +19,7 @@ interface ApplicationState {
     menuCollapsed: boolean;
     selectedBalances: ClaimableBalanceRecord[];
     usePublicNetwork: boolean;
+    webWorker?: Worker;
 }
 type SetApplicationState = Dispatch<SetStateAction<ApplicationState>>;
 
