@@ -63,8 +63,6 @@ jobs:
           name: server
           path: .
 
-      - run: "ls -hal"
-
       - name: deploy using rsync
         uses: burnett01/rsync-deployments@5.2
         with:
