@@ -12,15 +12,9 @@ ReactDOM.render(
   document.getElementById('root')
 );
 
-const setCheckForUpdatesInterval = (reg: ServiceWorkerRegistration) => setInterval(() => reg.update(), Number(process.env.REACT_APP_POLL_VERSION??60000));
-
 serviceWorkerRegistration.register({
-    onUpdate: reg => {
-        setCheckForUpdatesInterval(reg);
-    },
-    onSuccess: reg => {
-        setCheckForUpdatesInterval(reg);
-    }
+    onUpdate: () => console.log("service-worker was updated"),
+    onSuccess: () => console.log("service-worker was installed"),
 });
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

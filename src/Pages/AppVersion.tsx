@@ -1,20 +1,21 @@
 import { useEffect, useState, CSSProperties } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import Text from "antd/es/typography/Text";
-import { SERVER_VERSION_PATH } from "../shared";
+import { APP_VERSION } from "../app_version";
 import { Workbox } from "workbox-window";
-
-const getVersionFromServer = () => fetch(SERVER_VERSION_PATH)
-        .then(r => r.json())
-        .then(version => version.current)
-        .catch(() => "unknown");
+import {useInterval} from "react-use";
 
 export const useUpdateAvailable = (): boolean => {
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [serverVersion, setServerVersion] = useState<string>();
+    const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration>();
     const appVersion = useAppVersion();
     const history = useHistory();
     const loc = useLocation();
+
+    useInterval(() => {
+        serviceWorkerRegistration?.update().catch(() => {});
+    }, Number(process.env.REACT_APP_POLL_VERSION??60000));
 
     useEffect(() => {
         const workbox = new Workbox(process.env.PUBLIC_URL + "/service-worker.js");
@@ -23,37 +24,29 @@ export const useUpdateAvailable = (): boolean => {
                 .then(version => {
                     console.debug("got server-version from service-worker", version);
                     setServerVersion(version.server);
-                    if (version.server === version.app) {
+                    if (version.server !== version.app) {
                         // immediately update the worker, when a new version was found
                         // on page load
                         workbox.messageSkipWaiting();
                     }
                 });
         });
-        workbox.register();
+        workbox.register().then(reg => setServiceWorkerRegistration(reg));
     }, []);
 
     useEffect(() => {
         if (!appVersion || !serverVersion) {
             return;
         }
+        serviceWorkerRegistration?.update().catch(() => {});
         setUpdateAvailable(isUpdateAvailable => isUpdateAvailable || (appVersion !== serverVersion));
-    }, [appVersion, serverVersion, history, loc]);
+    }, [appVersion, serverVersion, history, loc, serviceWorkerRegistration]);
 
     return updateAvailable;
 }
 
 const useAppVersion = () => {
-    const [appVersion, setAppVersion] = useState<string>();
-
-    useEffect(() => {
-        getVersionFromServer()
-            .then(serverVersion => {
-                setAppVersion(appVersion => appVersion??serverVersion);
-            });
-    }, []);
-
-    return appVersion;
+    return APP_VERSION;
 };
 
 interface AppVersionProps {

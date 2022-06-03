@@ -47,7 +47,11 @@ const App = () => {
         });
 
         workbox.register().then(reg => {
-            reg?.waiting?.postMessage({type: 'SKIP_WAITING'});
+            if (reg?.waiting) {
+                reg.waiting.postMessage({type: 'SKIP_WAITING'});
+            } else {
+                window.location.reload();
+            }
         });
     }
     useEffect(() => {
