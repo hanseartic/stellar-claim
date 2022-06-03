@@ -16,6 +16,7 @@
     "bignumber.js": "^9.0.1",
     "ejs": "^3.1.7",
     "emoji-mart": "^3.0.1",
+    "idb-keyval": "^6.1.0",
     "memoizee": "^0.4.15",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "nth-check": "^2.0.1",

@@ -2,6 +2,7 @@ import {Image as AntImage, ImageProps, Skeleton} from "antd";
 import {Asset} from "stellar-sdk";
 import React, {useEffect, useMemo, useState} from "react";
 import URI from "urijs";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 
 interface  PlaceholderProps extends ImageProps {
     asset: Asset;
@@ -24,14 +25,25 @@ const Placeholder = (props: PlaceholderProps) => {
         }
         const knownSourceHosts = ["ipfs.io"];
         if (knownSourceHosts.includes(new URI(originalSource).host())) {
-            fetch(originalSource, {method:"GET", headers: {"Range": "bytes=0-0"}})
-                .then(res => res.blob())
-                .then(blob => {
-                    if (blob.type.includes("image/")) {
-                        setExtension(blob.type.split("/")[1]);
-                    }
+            const hash = new URL(originalSource).pathname;
+            idbGet(hash)
+                .then(ipfsMime => {
+                    return ipfsMime ?? fetch(originalSource, {method: "GET", headers: {"Range": "bytes=0-0"}})
+                        .then(res => res.blob())
+                        .then(blob => {
+                            if (blob.type.includes("image/")) {
+                                const ipfsMime = blob.type.split("/")[1];
+                                return idbSet(hash, ipfsMime).then(() => ipfsMime);
+                            }
+                        })
+                        .catch(console.debug);
                 })
-                .catch(console.debug);
+                .then(ipfsMime => {
+                    setExtension(ipfsMime);
+                })
+                .catch(() => {
+                    console.log("could not find IPFS hash in indexedDB", hash);
+                });
         } else {
             onPreview?.(originalSource);
         }

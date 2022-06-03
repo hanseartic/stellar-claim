@@ -29,9 +29,10 @@ precacheAndRoute(self.__WB_MANIFEST);
 // are fulfilled with your index.html shell. Learn more at
 // https://developers.google.com/web/fundamentals/architecture/app-shell
 const fileExtensionRegexp = new RegExp('/[^/?]+\\.[^/]+$');
+
 registerRoute(
     // Return false to exempt requests from being fulfilled by index.html.
-    ({ request, url }: { request: Request; url: URL }) => {
+    ({ request, url }) => {
         // If this isn't a navigation, skip.
         if (request.mode !== 'navigate') {
             return false;
@@ -86,14 +87,14 @@ registerRoute(
 
 // This allows the web app to trigger skipWaiting via
 // registration.waiting.postMessage({type: 'SKIP_WAITING'})
-self.addEventListener('message', (event) => {
+self.addEventListener("message", (event) => {
     if (!event.data) return;
 
-    if (event.data.type === 'SKIP_WAITING') {
+    if (event.data.type === "SKIP_WAITING") {
         console.log("loading new service-worker on user's demand")
         self.skipWaiting();
     }
-    if (event.data.type === 'GET_VERSION') {
+    if (event.data.type === "GET_VERSION") {
         fetch(SERVER_VERSION_PATH)
             .then(r => r.json())
             .then(version => version.current)
