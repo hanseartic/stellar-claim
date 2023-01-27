@@ -29,13 +29,13 @@ jobs:
           REACT_APP_VERSION: ${GITHUB_SHA}
           REACT_APP_HORIZON_URL: ${{ secrets.HORIZON_URL }}
       - name: store build artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-artifact
           path: build
           retention-days: 1
       - name: store server
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: server
           path: index.js
