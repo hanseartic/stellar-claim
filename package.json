@@ -67,7 +67,7 @@
     "@craco/craco": "^7.0.0-alpha.3",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^11.2.7",
-    "@testing-library/user-event": "^12.8.3",
+    "@testing-library/user-event": "^14.4.3",
     "@types/emoji-mart": "^3.0.8",
     "@types/jest": "^26.0.23",
     "@types/memoizee": "^0.4.5",
