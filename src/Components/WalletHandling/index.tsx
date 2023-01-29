@@ -16,9 +16,9 @@ const lobstrMarker = "GA2T6GR7VXXXBETTERSAFETHANSORRYXXXPROTECTEDBYLOBSTRVAULT";
 
 export const submitTransaction = (unsignedXDR: string, account: AccountResponse, serverUrl: string, selectedNetwork: "PUBLIC" | "TESTNET"): Promise<RealTransactionResponse|undefined> => {
     const server = new Server(serverUrl);
-    return signTransaction(unsignedXDR, selectedNetwork)
+    return signTransaction(unsignedXDR, { network: selectedNetwork })
         .catch(reason => {
-            freighterApi.getNetwork().then(network => {
+            freighterApi.getNetworkDetails().then(({ network }) => {
                 if (network !== selectedNetwork) {
                     notification['warn']({message: 'The network selected in Freighter ('+network+') does not match currently selected network ('+selectedNetwork+').'});
                 } else {
