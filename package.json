@@ -32,7 +32,7 @@
     "stellar-resolve-claimant-predicates": "^2.0.9",
     "stellar-sdk": "^10.1.2",
     "typescript": "^4.3.4",
-    "web-vitals": "^1.1.2"
+    "web-vitals": "^3.1.1"
   },
   "scripts": {
     "set-app-version": "APP_VERSION=$(git rev-parse --short HEAD) npx envsub --syntax handlebars app_version.js.dist src/app_version.js",
