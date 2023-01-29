@@ -26,7 +26,7 @@
     "react-markdown": "^6.0.2",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^5.0.1",
-    "react-use": "^17.3.2",
+    "react-use": "^17.4.0",
     "rehype-raw": "^5.1.0",
     "runes": "^0.4.3",
     "stellar-resolve-claimant-predicates": "^2.0.9",
