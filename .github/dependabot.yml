@@ -7,8 +7,8 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "npm"
     directory: "/server"
     schedule:
-      interval: "weekly"
+      interval: "daily"
