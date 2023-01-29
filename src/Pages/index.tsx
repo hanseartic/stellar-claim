@@ -1,15 +1,15 @@
 import AccountOverview from "./AccountOverview";
 import ClaimBalances from "./ClaimBalances";
-import ReactMarkdown, { ReactElement } from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
 import aboutMarkdown from './About.md';
 import privacyMarkdown from './Privacy.md';
 import rehypeRaw from 'rehype-raw';
-import {useEffect, useState} from "react";
-import {Components} from "react-markdown/src/ast-to-react";
-import {Keypair} from "stellar-sdk";
-import {shortAddress} from "../StellarHelpers";
-import QRCodeStyling from "qr-code-styling";
+import {useEffect, useState, ReactElement} from "react";
 import {Image} from "antd";
+import directive from "remark-directive";
+import envRemarkPlugin from "@hanseartic/remark-env-directive"
+import qrCodeRemarkPlugin from "@hanseartic/remark-qrcode-directive";
+import stellarAddressRemarkPlugin from "./stellarAddressPlugin";
 
 const ImageUriTransformer = (src: string): string => {
     const [imageSource, setImageSource] = useState<string>(src);
@@ -22,49 +22,8 @@ const ImageUriTransformer = (src: string): string => {
     return imageSource;
 };
 
-const blobToBase64 = (blob: Blob|null) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onloadend = () => {
-        resolve(reader.result as string);
-    }
-    if (!blob) {
-        throw new Error('blob empty');
-    }
-    reader.readAsDataURL(blob);
-});
-
-const QRCode = () => {
-    const [data, setData] = useState<string>();
-
-    useEffect(() => {
-        const qr = new QRCodeStyling({data: process.env.REACT_APP_DONATION_ADDRESS,});
-        qr.getRawData()
-            .then(blobToBase64)
-            .then((t) => setData(t));
-    }, []);
-
-    return <Image height={120} src={data} />;
-}
-
 const components: Components = {
-    abbr: (props) => {
-        const componentProps: typeof props & {"data-length"?:string} = {...props};
-        const defaultResult = (<abbr {...{...props, node: undefined}}>{props.children}</abbr>);
-        if (componentProps["data-length"] === undefined) return defaultResult;
-        if (props.children.length !== 1) return defaultResult;
-        const child = props.children[0] as ReactElement;
-        if (typeof child.type !== 'function') return defaultResult;
-        const fnResult = (child.type as () => any)();
-        componentProps.title = fnResult;
-        return <abbr {...{...componentProps, node: undefined}}>{shortAddress(fnResult, parseInt(componentProps['data-length'] as string))}</abbr>;
-    },
-    object: (props) => {
-        const componentProps: typeof props & {"data-env"?:string} = {...props};
-        return <object {...{...props, node:undefined}}>{process.env[componentProps['data-env'] as string]??props.children}</object>;
-    },
-    keygen: () => Keypair.random().publicKey(),
-    embed: ({...props}) => { if (props.type === "img/donation-qr") {return QRCode();} return <embed {...props} />;},
+    img: (props) => <Image src={props.src} title={props.title} alt={props.alt} />
 };
 
 const MarkdownPage = (props: {source: string}) => {
@@ -77,11 +36,11 @@ const MarkdownPage = (props: {source: string}) => {
 
     return (<div style={{textAlign: "left"}} className={"App-md"}>
         <ReactMarkdown
-            children={markdown}
             components={components}
+            remarkPlugins={[directive, envRemarkPlugin, stellarAddressRemarkPlugin, qrCodeRemarkPlugin]}
             rehypePlugins={[rehypeRaw]}
             transformImageUri={ImageUriTransformer}
-        />
+        >{markdown}</ReactMarkdown>
         </div>);
 }
 

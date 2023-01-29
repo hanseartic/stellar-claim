@@ -20,7 +20,7 @@ In case you choose to claim a listed balance for which no trustline was establis
 yet, this service will take care of it and create the trustline on-the-fly while claiming.
 
 ### How does it work?
-* Enter your stellar account (e.g. *<abbr data-length=12><keygen /></abbr>*) into the search bar
+* Enter your stellar account (e.g. :stellar_address[:env[REACT_APP_DONATION_ADDRESS]]{length=12}) into the search bar
 * The list will show all balances that can be claimed into the given account
 * Select balances to claim
 * Click button to claim the selected balances into your wallet
@@ -30,9 +30,14 @@ yet, this service will take care of it and create the trustline on-the-fly while
 ### Is this service free of charge?
 Yes! You don't need to pay anything to use this service.
 
-However, feel free to send a donation to <b><object data-env="REACT_APP_DONATION_ADDRESS"></object></b>.
+However, feel free to send a donation to
 
-<embed type="img/donation-qr" />
+<div style="textAlign:center">
+
+::qr[:stellar_address[:env[REACT_APP_DONATION_ADDRESS]]]{scale=6 margin=2 color.light=#ffffffff errorCorrectionLevel=high}
+
+**:stellar_address[:env[REACT_APP_DONATION_ADDRESS]]**
+</div>
 
 
 [claimable-balance]: https://developers.stellar.org/docs/glossary/claimable-balance/
