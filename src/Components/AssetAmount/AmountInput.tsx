@@ -39,7 +39,7 @@ const AmountInput = (props: AmountInputProps) => {
                 currentValue = currentValue.times(-1);
             }
             const decimalStart = currentStringValue.search(/\.[\d\s   ]*0*$/);
-            let decimalPlaces = currentValue.decimalPlaces();
+            let decimalPlaces = currentValue.decimalPlaces()??0;
             if (decimalStart >= 0) {
                 const decimalsPart = currentStringValue
                     .substring(decimalStart+1)
