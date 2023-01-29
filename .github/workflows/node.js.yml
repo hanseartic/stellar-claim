@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
 
 jobs:
   build:
@@ -42,6 +45,7 @@ jobs:
           retention-days: 1
 
   deploy:
+    if: ${{ github.event_name == 'push' }}
     name: Deploy via rsync
     environment:
       name: asteroids
