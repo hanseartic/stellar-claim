@@ -18,7 +18,6 @@ export default function stellarAddressRemarkPlugin() {
         node.value = shortAddress(address, length);
         return;
       }
-      const data = node.data || (node.data = {})
       node.data.hProperties = {
         title: address,
       }

@@ -4,7 +4,7 @@ import ReactMarkdown, { Components } from "react-markdown";
 import aboutMarkdown from './About.md';
 import privacyMarkdown from './Privacy.md';
 import rehypeRaw from 'rehype-raw';
-import {useEffect, useState, ReactElement} from "react";
+import {useEffect, useState} from "react";
 import {Image} from "antd";
 import directive from "remark-directive";
 import envRemarkPlugin from "@hanseartic/remark-env-directive"
