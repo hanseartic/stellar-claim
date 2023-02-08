@@ -10,6 +10,7 @@ import directive from "remark-directive";
 import envRemarkPlugin from "@hanseartic/remark-env-directive"
 import qrCodeRemarkPlugin from "@hanseartic/remark-qrcode-directive";
 import stellarAddressRemarkPlugin from "./stellarAddressPlugin";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const ImageUriTransformer = (src: string): string => {
     const [imageSource, setImageSource] = useState<string>(src);
@@ -53,3 +54,13 @@ export {
     ClaimBalances,
     Privacy
 };
+export default function Pages() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    useEffect(() => {
+        if (location.pathname === '/') {
+            navigate("/account/", { replace: true });
+        }
+    }, [location.pathname, navigate]);
+    return (<><Outlet /></>);
+}
