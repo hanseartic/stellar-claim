@@ -13,15 +13,17 @@ export default function stellarAddressRemarkPlugin() {
         ? toText(toHast(node)??h(null))
         : Keypair.random().publicKey();
       const length = parseInt(node.attributes?.length ?? 56);
+      const data = node.data || (node.data = {});
+
       if (length >= 56) {
         node.type = 'text';
         node.value = shortAddress(address, length);
         return;
       }
-      node.data.hProperties = {
+      data.hProperties = {
         title: address,
       }
-      node.data.hName = 'abbr';
+      data.hName = 'abbr';
       node.children[0].value = shortAddress(address, length);
     })
   }

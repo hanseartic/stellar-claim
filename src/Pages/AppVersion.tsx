@@ -1,5 +1,5 @@
 import { useEffect, useState, CSSProperties } from "react";
-import { useHistory, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Text from "antd/es/typography/Text";
 import { APP_VERSION } from "../app_version";
 import { Workbox } from "workbox-window";
@@ -10,7 +10,7 @@ export const useUpdateAvailable = (): boolean => {
     const [serverVersion, setServerVersion] = useState<string>();
     const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration>();
     const appVersion = useAppVersion();
-    const history = useHistory();
+    const navigate = useNavigate();
     const loc = useLocation();
 
     useInterval(() => {
@@ -40,7 +40,7 @@ export const useUpdateAvailable = (): boolean => {
         }
         serviceWorkerRegistration?.update().catch(() => {});
         setUpdateAvailable(isUpdateAvailable => isUpdateAvailable || (appVersion !== serverVersion));
-    }, [appVersion, serverVersion, history, loc, serviceWorkerRegistration]);
+    }, [appVersion, serverVersion, navigate, loc, serviceWorkerRegistration]);
 
     return updateAvailable;
 }

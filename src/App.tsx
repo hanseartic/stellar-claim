@@ -1,8 +1,8 @@
 import react, {useEffect, useMemo} from 'react';
-import {BrowserRouter as Router, Link, Redirect, Route, Switch, useHistory,} from 'react-router-dom';
+import {BrowserRouter as Router, Link, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 import './App.css';
 import 'antd/dist/antd.css';
-import {About, AccountOverview, ClaimBalances, Privacy} from './Pages';
+import Pages, {About, AccountOverview, ClaimBalances, Privacy} from './Pages';
 import {ApplicationContextProvider} from './ApplicationContext';
 import useApplicationState from './useApplicationState';
 import {
@@ -35,10 +35,11 @@ const App = () => {
         menuCollapsed?MenuUnfoldOutlined:MenuFoldOutlined, {
             onClick: () => setMenuCollapsed(!menuCollapsed)
         });
-    const history = useHistory();
+    const navigate = useNavigate();
+    const location = useLocation();
     const updateAvailable = useUpdateAvailable();
     function goHome() {
-        history.push("/account/");
+        navigate("/account/");
     }
     const refreshApp = () => {
         const workbox = new Workbox(process.env.PUBLIC_URL + "/service-worker.js");
@@ -55,12 +56,12 @@ const App = () => {
         });
     }
     useEffect(() => {
-        if (history.location.pathname.startsWith('/claim/') || history.location.pathname.startsWith('/account/')) {
-            let page = history.location.pathname.split('/')[1];
-            if (accountInformation.state === AccountState.notSet) history.replace(`/${page}/`);
-            if ([AccountState.valid].includes(accountInformation.state!)) history.replace(`/${page}/${accountInformation.account!.id}`);
+        if (location.pathname.startsWith('/claim/') || location.pathname.startsWith('/account/')) {
+            let page = location.pathname.split('/')[1];
+            if (accountInformation.state === AccountState.notSet) navigate(`/${page}/`, { replace: true });
+            if ([AccountState.valid].includes(accountInformation.state!)) navigate(`/${page}/${accountInformation.account!.id}`, { replace: true });
         }
-    }, [accountInformation, history]);
+    }, [accountInformation, navigate, location.pathname]);
 
     const worker = useMemo(() =>
         new Worker(new URL('./updateAccountWorker.tsx', import.meta.url), {type: "module"}),
@@ -160,19 +161,18 @@ const App = () => {
                     <Breadcrumb />
                 </Header>
                 <Content className="App-content">
-                    <Switch>
-                        <Route path={['/http:', '/https:']} component={(props: {location: Location}) => {
-
+                    <Routes>
+                        <Route path="/" element={<Pages />}>
+                        {/*<Route path={['/http:', '/https:']} component={(props: {location: Location}) => {
                             window.location.replace(props.location.pathname.substr(1)) // substr(1) removes the preceding '/'
                             return null
-                        }}/>
-                        <Route path="/account/:account?"><AccountOverview /></Route>
-                        <Route path="/about"><About /></Route>
-                        <Route path="/privacy"><Privacy /></Route>
-                        <Route path="/claim/:account?"><ClaimBalances /></Route>
-                        <Redirect exact={true} from="/" to="/account/" />
-
-                    </Switch>
+                        }}/>*/}
+                            <Route path="account/:account?" element={<AccountOverview />} />
+                            <Route path="about" element={<About />} />
+                            <Route path="privacy" element={<Privacy />} />
+                            <Route path="claim/:account?" element={<ClaimBalances />} />
+                        </Route>
+                    </Routes>
                 </Content>
                 <Footer ></Footer>
             </Layout>
