@@ -22,7 +22,7 @@ export default function stellarAddressRemarkPlugin() {
       }
       data.hProperties = {
         title: address,
-      }
+      };
       data.hName = 'abbr';
       node.children[0].value = shortAddress(address, length);
     })
