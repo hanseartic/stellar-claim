@@ -1,7 +1,7 @@
 import react, {useEffect, useMemo} from 'react';
 import {BrowserRouter as Router, Link, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 import './App.css';
-import 'antd/dist/antd.css';
+import 'antd/dist/reset.css';
 import Pages, {About, AccountOverview, ClaimBalances, Privacy} from './Pages';
 import {ApplicationContextProvider} from './ApplicationContext';
 import useApplicationState from './useApplicationState';

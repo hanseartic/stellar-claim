@@ -37,7 +37,7 @@ export default function EmojiInput(props: EmojiInputProps) {
             const colonSearch = match[0].replaceAll(':', '');
 
             SearchIndex.search(colonSearch)
-                .then((results: Emoji[]) => results
+                .then((results: Emoji[]) => (results??[])
                     .map<AutoCompleteOptionType>(emoji => ({
                         label: emoji.name,
                         options: emoji.skins.map(skin => ({value: skin.native})),
