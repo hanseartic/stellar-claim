@@ -89,7 +89,7 @@ registerRoute(
 // registration.waiting.postMessage({type: 'SKIP_WAITING'})
 self.addEventListener("message", (event) => {
     if (event.origin !== self.location.origin) {
-        console.warn(`received potentially unsafe message from ${event.origin} - ignoring`);
+        console.warn(`received potentially unsafe message from foreign origin - ignoring`);
         return;
     }
     if (!event.data) return;
