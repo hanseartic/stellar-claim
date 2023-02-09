@@ -53,11 +53,10 @@ import URI from "urijs";
 import StellarHelpers, {getStellarAsset, shortAddress} from "../StellarHelpers";
 import useApplicationState from "../useApplicationState";
 import {submitTransaction} from "./WalletHandling";
-import moment from "moment";
 import runes from "runes";
-import { RangeValue } from "rc-picker/lib/interface";
 import EmojiInput, {emojiShortcodeMatch} from "./EmojiInput";
 import AssetAmount, {AmountInput} from "./AssetAmount/";
+import dayjs, { Dayjs } from "dayjs";
 
 type BalanceLine = Horizon.BalanceLine;
 type BalanceLineAsset = Horizon.BalanceLineAsset;
@@ -138,9 +137,11 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
     const [sendPopoverVisible, setSendPopoverVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [transactionMemo, setTransactionMemo] = useState('');
-    const [claimableRange, setClaimableRange] = useState<RangeValue<moment.Moment>>();
+    const [claimableRange, setClaimableRange] = useState<RangeValue<Dayjs>>();
     const [XDRs, setXDRs] = useState<string[]>([]);
 
+    type EventValue<DateType> = DateType | null;
+    type RangeValue<DateType> = [EventValue<DateType>, EventValue<DateType>] | null;
     const collect = (offersCollection: ServerApi.CollectionPage<ServerApi.OfferRecord>): Promise<BigNumber> => {
         if (!offersCollection.records.length) return new Promise((resolve) => resolve(new BigNumber(0)));
 
@@ -350,10 +351,10 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
         </Card>)
     };
 
-    const onDateSelected = (claimableRange: RangeValue<moment.Moment>) => {
-        setClaimableRange(claimableRange
-            ?claimableRange.map((moment: moment.Moment|null) => moment?moment.seconds(0).milliseconds(0):null) as RangeValue<moment.Moment>
-            :null
+    const onDateSelected = (claimableRange: RangeValue<Dayjs>) => {
+        console.log(claimableRange);
+        setClaimableRange((claimableRange??[])
+            .map((eventValue) => eventValue?.second(0).millisecond(0)) as RangeValue<Dayjs>
         );
     };
 
@@ -474,7 +475,7 @@ export default function BalanceCard({balanceRecord}: {balanceRecord: AccountBala
                 {sendAsClaimable?<DatePicker.RangePicker
                     allowEmpty={[true, true]}
                     size={'small'}
-                    disabledDate={(current) => current && current < moment().startOf('day')}
+                    disabledDate={(current) => current && current < dayjs().startOf('day')}
                     showTime={{ format: 'YYYY-MM-DD HH:mm' }}
                     placeholder={['claimable after', 'claimable before']}
                     format="YYYY-MM-DD HH:mm"

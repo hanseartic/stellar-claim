@@ -20,9 +20,9 @@ export const submitTransaction = (unsignedXDR: string, account: AccountResponse,
         .catch(reason => {
             freighterApi.getNetworkDetails().then(({ network }) => {
                 if (network !== selectedNetwork) {
-                    notification['warn']({message: 'The network selected in Freighter ('+network+') does not match currently selected network ('+selectedNetwork+').'});
+                    notification.warning({message: 'The network selected in Freighter ('+network+') does not match currently selected network ('+selectedNetwork+').'});
                 } else {
-                    notification['warn']({message: 'Freighter: '+ reason});
+                    notification.warning({message: 'Freighter: '+ reason});
                 }
             });
             throw reason;

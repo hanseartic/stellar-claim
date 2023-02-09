@@ -175,7 +175,7 @@ export default function ClaimBalances() {
         notification.info({
             message: `Cleaning claimable balances yielded proceedings of ${proceedings} XLM.`,
         });
-        notification.close("notification:sentToVault");
+        notification.destroy("notification:sentToVault");
     };
 
     const cleanBalances = async () => {
