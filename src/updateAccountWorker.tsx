@@ -13,7 +13,7 @@ export type AccountFetcherResponse = {
     hash: string;
 }
 
-let timerId = 0;
+let timeout: NodeJS.Timeout;
 
 onmessage = (messageEvent: MessageEvent<AccountFetcherMessage>) => {
     const { accountId, network, interval } = messageEvent.data;
@@ -46,21 +46,21 @@ onmessage = (messageEvent: MessageEvent<AccountFetcherMessage>) => {
         return;
     }
 
-    if (timerId !== 0) {
-        clearTimeout(timerId);
-        timerId = 0;
+    if (timeout) {
+        clearTimeout(timeout);
+        timeout.unref();
     }
 
     server.transactions().forAccount(accountId).limit(1).order("desc").call()
         .then(({records}) => records[0].paging_token)
         .then(cursor => {
-            timerId = setTimeout(function doPoll(txCursor: string) {
+            timeout = setTimeout(function doPoll(txCursor: string) {
                 pollAccount(txCursor)
                     .then(() => {
-                        clearTimeout(timerId);
+                        clearTimeout(timeout);
                     })
                     .catch(() => {
-                        timerId = setTimeout(doPoll, interval, txCursor);
+                        timeout = setTimeout(doPoll, interval, txCursor);
                     });
             }, interval, cursor);
         });
