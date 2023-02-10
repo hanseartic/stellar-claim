@@ -48,7 +48,6 @@ onmessage = (messageEvent: MessageEvent<AccountFetcherMessage>) => {
 
     if (timeout) {
         clearTimeout(timeout);
-        timeout.unref();
     }
 
     server.transactions().forAccount(accountId).limit(1).order("desc").call()
