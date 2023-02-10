@@ -32,7 +32,7 @@
     "react-router-dom": "^6.8.1",
     "react-scripts": "^5.0.1",
     "react-use": "^17.4.0",
-    "rehype-raw": "^5.1.0",
+    "rehype-raw": "^6.1.1",
     "remark-directive": "^2.0.1",
     "runes": "^0.4.3",
     "stellar-resolve-claimant-predicates": "^2.0.9",
@@ -73,7 +73,7 @@
   "devDependencies": {
     "@craco/craco": "^7.0.0",
     "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/react": "^11.2.7",
+    "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
     "@types/emoji-mart": "^3.0.8",
     "@types/jest": "^29.4.0",
