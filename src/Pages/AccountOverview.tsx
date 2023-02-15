@@ -1,4 +1,4 @@
-import {BackTop, Col, Row, Table, TablePaginationConfig} from 'antd';
+import {Col, FloatButton, Row, Table, TablePaginationConfig} from 'antd';
 import React, {ReactNode, useEffect, useState} from 'react';
 import AccountSelector from '../Components/AccountSelector';
 import useApplicationState from '../useApplicationState';
@@ -116,7 +116,7 @@ export default function AccountOverview() {
     return (<>
         <AccountSelector />
         <>Account {shortAddress(accountInformation.account?.id??'', 9)} created on {accountCreated.date} by <StellarAddressLink id={accountCreated.by} length={9} /></>
-        <BackTop visibilityHeight={50} />
+        <FloatButton.BackTop visibilityHeight={50} />
         <Table
             showHeader={true}
             sticky
