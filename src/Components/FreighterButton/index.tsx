@@ -16,7 +16,12 @@ export default function FreighterButton(props: FreighterButtonProps) {
             .then(key => props.onAccount && props.onAccount(key))
     }
     useEffect(() => {
-        setFreighterAvailable(freighterApi.isConnected());
+        const freighterIsConnected = freighterApi.isConnected();
+        if (true === freighterIsConnected) {
+            setFreighterAvailable(freighterIsConnected);
+        } else {
+            freighterIsConnected.then(isConnected => setFreighterAvailable(isConnected));
+        }
     }, [balancesLoading]);
 
     const freighterExtensionNotInstalled = (
