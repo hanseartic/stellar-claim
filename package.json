@@ -4,7 +4,7 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "@ant-design/icons": "^5.0.1",
+    "@ant-design/icons": "^5.1.2",
     "@cosmic-plus/loopcall": "^1.6.0",
     "@emoji-mart/data": "^1.1.2",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
