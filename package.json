@@ -14,7 +14,7 @@
     "@hanseartic/remark-env-directive": "^1.0.2",
     "@hanseartic/remark-qrcode-directive": "^1.0.3",
     "@stellar/freighter-api": "^1.4.0",
-    "antd": "^5.3.3",
+    "antd": "^5.6.3",
     "bignumber.js": "^9.1.1",
     "ejs": "^3.1.9",
     "emoji-mart": "^5.5.2",
