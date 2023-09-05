@@ -11,7 +11,7 @@
     "@fortawesome/free-regular-svg-icons": "^6.4.0",
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
     "@fortawesome/react-fontawesome": "^0.2.0",
-    "@hanseartic/remark-env-directive": "^1.0.2",
+    "@hanseartic/remark-env-directive": "^1.0.3",
     "@hanseartic/remark-qrcode-directive": "^1.0.3",
     "@stellar/freighter-api": "^1.4.0",
     "antd": "^5.3.3",
