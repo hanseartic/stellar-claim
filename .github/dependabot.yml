@@ -9,10 +9,8 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
-    target-branch: deps
   - package-ecosystem: "npm"
     directory: "/server"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
-    target-branch: deps
