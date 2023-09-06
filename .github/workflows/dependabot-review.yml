@@ -1,10 +1,7 @@
 name: Review Dependabot PRs
 on: 
   pull_request_target:
-    branches: [deps]
-  delete:
-    branches: [deps]
-  
+    branches: [main]  
 
 permissions:
   pull-requests: write
@@ -39,18 +36,3 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ github.token }}
-
-  deps_branch_deleted:
-    name: dependabot batch branch deleted
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'delete' }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
-      - name: Recreate deps branch on main
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git push origin main:deps
