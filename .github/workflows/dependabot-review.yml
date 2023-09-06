@@ -41,12 +41,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
   deps_branch_deleted:
+    name: dependabot batch branch deleted
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'delete' }}
     steps:
       - uses: actions/checkout@v4
         with:
-          depth: 0
+          fetch-depth: 0
           ref: main
       - name: Recreate deps branch on main
         run: |
