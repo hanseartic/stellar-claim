@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.user.login == 'dependabot[bot]' }}
     steps:
-      - uses: otto-de/purge-deprecated-workflow-runs@v1
+      - uses: otto-de/purge-deprecated-workflow-runs@v2
         with:
           remove-obsolete: false
           remove-skipped: |
