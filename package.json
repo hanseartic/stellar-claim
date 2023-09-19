@@ -32,7 +32,7 @@
     "react-scripts": "^5.0.1",
     "react-use": "^17.4.0",
     "rehype-raw": "^6.1.1",
-    "remark-directive": "^2.0.1",
+    "remark-directive": "^3.0.0",
     "runes": "^0.4.3",
     "stellar-resolve-claimant-predicates": "^2.0.10",
     "stellar-sdk": "^10.4.1",
