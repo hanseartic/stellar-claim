@@ -30,7 +30,7 @@
     "react-markdown": "^8.0.7",
     "react-router-dom": "^6.21.2",
     "react-scripts": "^5.0.1",
-    "react-use": "^17.4.2",
+    "react-use": "^17.5.0",
     "rehype-raw": "^6.1.1",
     "remark-directive": "^3.0.0",
     "runes": "^0.4.3",
