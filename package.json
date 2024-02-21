@@ -79,7 +79,7 @@
     "@types/memoizee": "^0.4.11",
     "@types/node": "^20.11.19",
     "@types/react": "^18.2.57",
-    "@types/react-dom": "^18.2.18",
+    "@types/react-dom": "^18.2.19",
     "@types/react-router-dom": "^5.3.3",
     "@types/runes": "^0.4.3",
     "envdist": "^1.0.14"
