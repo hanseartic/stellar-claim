@@ -11,7 +11,7 @@
   "license": "ISC",
   "devDependencies": {
     "express": "^4.18.1",
-    "gitlog": "^4.0.4"
+    "gitlog": "^5.0.1"
   },
   "dependencies": {
     "express-rate-limit": "^7.0.1",
