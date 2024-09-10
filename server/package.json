@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "express": "^4.18.1",
+    "express": "^5.0.0",
     "gitlog": "^5.0.1"
   },
   "dependencies": {
