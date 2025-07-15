@@ -14,7 +14,7 @@
     "gitlog": "^5.0.1"
   },
   "dependencies": {
-    "express-rate-limit": "^7.0.1",
+    "express-rate-limit": "^8.0.0",
     "stdio": "^2.1.1"
   }
 }
