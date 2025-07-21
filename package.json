@@ -21,7 +21,7 @@
     "hast-util-to-text": "^3.1.2",
     "hastscript": "^7.2.0",
     "idb-keyval": "^6.2.1",
-    "mdast-util-to-hast": "^12.3.0",
+    "mdast-util-to-hast": "^13.2.0",
     "memoizee": "^0.4.15",
     "node-polyfill-webpack-plugin": "^3.0.0",
     "nth-check": "^2.1.1",
