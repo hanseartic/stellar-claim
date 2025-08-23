@@ -1,4 +1,4 @@
-import react, {useEffect, useMemo} from 'react';
+import react, {useEffect, useMemo, useState} from 'react';
 import {BrowserRouter as Router, Link, Route, Routes, useLocation, useNavigate} from 'react-router-dom';
 import './App.css';
 import 'antd/dist/reset.css';
@@ -19,7 +19,7 @@ import {
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faBroadcastTower, faHandHolding, faIdCard, faWallet,} from '@fortawesome/free-solid-svg-icons';
 
-import {Badge, Breadcrumb, Layout, Menu, Switch as ToggleSwitch} from 'antd';
+import {Badge, Breadcrumb, Layout, Menu, MenuProps, Switch as ToggleSwitch} from 'antd';
 import {AccountState} from "./Components/AccountSelector";
 import {Workbox} from "workbox-window";
 import AppVersion, {useUpdateAvailable} from "./Pages/AppVersion";
@@ -38,9 +38,11 @@ const App = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const updateAvailable = useUpdateAvailable();
+    const [navigateTo, setNavigateTo] = useState('/account/');
     function goHome() {
         navigate("/account/");
     }
+
     const refreshApp = () => {
         const workbox = new Workbox(process.env.PUBLIC_URL + "/service-worker.js");
         workbox.addEventListener('controlling', () => {
@@ -62,6 +64,9 @@ const App = () => {
             if ([AccountState.valid].includes(accountInformation.state!)) navigate(`/${page}/${accountInformation.account!.id}`, { replace: true });
         }
     }, [accountInformation, navigate, location.pathname]);
+    useEffect(() => {
+        navigate(navigateTo);
+    }, [navigate, navigateTo]);
 
     const worker = useMemo(() =>
         new Worker(new URL('./updateAccountWorker.tsx', import.meta.url), {type: "module"}),
@@ -96,6 +101,86 @@ const App = () => {
         // eslint-disable-next-line
     }, [accountInformation.account, usePublicNetwork]);
 
+
+    type AntMenuItem = Required<MenuProps>['items'][number];
+    const menuItems: AntMenuItem[] = [
+        {
+            key: 'account',
+            label: 'Stellar Account',
+            icon: <FontAwesomeIcon icon={faWallet}/>,
+            onClick: () => setNavigateTo('/account/'),
+            children: [
+                {
+                    key: 'account:overview',
+                    label: 'Account overview',
+                    icon: <FontAwesomeIcon icon={faIdCard}/>,
+                    onClick: () => setNavigateTo('/account/'),
+                },
+                {
+                    key: 'account:claim',
+                    label: 'Claim balances',
+                    icon: <FontAwesomeIcon icon={faIdCard}/>,
+                    onClick: () => setNavigateTo('/claim/'),
+                },
+            ]
+        },
+        {
+            key: 'settings',
+            label: 'Settings',
+            icon: <SettingOutlined />,
+            children: [
+                {
+                    type: 'group',
+                    label: 'Network',
+                    children: [
+                        {
+                            label: 'Network',
+                            key: 'settings:toggleNetwork',
+                            icon: <FontAwesomeIcon icon={faBroadcastTower}/>,
+                            children: [
+                                {
+                                    icon: <ToggleSwitch checkedChildren="Public" unCheckedChildren="Testnet" onChange={setUsePublicNetwork} checked={usePublicNetwork}/>
+                                }
+                            ]
+                        } as AntMenuItem
+                    ],
+                },
+                {
+                    type: 'group',
+                    label: 'Account overview',
+                    children: [
+                        {
+                            label: 'Load market for balances',
+                            key: 'settings:loadMarket',
+                        },
+                        {
+                            label: 'Paginate balances list',
+                            key: 'settings:paginateBalances',
+                        }
+                    ],
+                }
+            ],
+        },
+        {
+            key: 'about',
+            label: 'About this site',
+            icon: <InfoCircleOutlined />,
+            onClick: () => setNavigateTo('/about'),
+        },
+        {
+            key: 'privacy',
+            label: 'Privacy information',
+            icon: <SafetyOutlined />,
+            onClick: () => setNavigateTo('/privacy'),
+        },
+        {
+            key: 'app:version',
+            label: "App Version"+(updateAvailable?" - update available":""),
+            icon: <Badge count={menuCollapsed && updateAvailable?1:0} dot offset={[0, 8]}><ApiOutlined style={{color: "lightgray"}}/></Badge>,
+            children: [<AppVersion style={{color: "lightgray"}} />]
+        } as AntMenuItem
+    ];
+
     return (
         <Layout className="App">
             <Sider
@@ -110,7 +195,7 @@ const App = () => {
                     left: 0,
                 }}>
                 {/*<div><img src={logo} className="App-logo" alt="logo"/></div>*/}
-                <Menu forceSubMenuRender={true} theme="dark" mode="vertical" selectable={false}>
+                <Menu forceSubMenuRender={true} theme="dark" mode="vertical" selectable={false} items={menuItems}>
                     <SubMenu title="Stellar Account" key="account" icon={<FontAwesomeIcon icon={faWallet}/>} onTitleClick={goHome}>
                         <MenuItem title="Account overview" icon={<FontAwesomeIcon icon={faIdCard}/>} key="account:overview">
                             <Link to="/account/">Account overview</Link>
